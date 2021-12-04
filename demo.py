@@ -15,7 +15,10 @@ globalGrid = None
 stopDisplay = False
 isDisplaying = False
 displayThread = None
-isDirty = False
+isDirty = False # needs sync across pygame and cmd threads.
+trainPosRow = -1 # needs sync
+trainPosCol = -1 # needs sync
+train = None
 
 BLACK = (0, 0, 0)
 WHITE = (200, 200, 200)
@@ -59,15 +62,6 @@ def pygameDisplay(threadName):
     leftImage = rot_center(leftImage, -90)
 
     topLeftRect = regularImg.get_rect()
-    # x2s1Img = pygame.image.load("switch1.png")
-    # x2s1Img = rot_center(x2s1Img, -180)
-    # x1s3Img = pygame.image.load("switch3.png")
-    # x1s3Img = rot_center(x1s3Img, -90)
-    # x2s2Img = pygame.image.load("switch2.png")
-    # x2s2Img = rot_center(x2s2Img, -180)
-    # row 4 images
-    # x3rightImg = pygame.image.load("rightTurn.png")
-    # x3rightImg = rot_center(x3rightImg, -270)
 
     global globalGrid
     view = []
@@ -91,16 +85,6 @@ def pygameDisplay(threadName):
             if(isinstance(elm,  lib.RegularRoad)):
                 if(elm.visuals == '|'):
                     view[i].append(regularImg)
-                    # if(elm.rotationCount in regularImgCache):
-                    #     # use that img
-                    #     view[i].append(regularImgCache[elm.rotationCount])
-                    # else:
-                    #     #create that img and save it there
-                    #     rotatedImg = pygame.image.load("straightRoad.png")
-                    #     rotatedImg = rot_center(rotatedImg, -90 * elm.rotationCount)
-                    #     regularImgCache[elm.rotationCount] = rotatedImg  
-                    #     view[i].append(rotatedImg)
-
                 elif(elm.visuals == 'R'):
                     view[i].append(rightImage)
                 elif(elm.visuals == 'L'):
@@ -128,8 +112,10 @@ def pygameDisplay(threadName):
                 view[i].append(bgImg)
 
     trainRect = trainImg.get_rect()
+    trainRect = pygame.Rect.move(topLeftRect, -200, -200)
+
     i = 0
-    global stopDisplay, isDirty
+    global stopDisplay, isDirty, trainPosRow, trainPosCol
     while stopDisplay == False:
 
         if(isDirty == True):
@@ -238,11 +224,14 @@ def pygameDisplay(threadName):
                     else: # unknown type of cell
                         view[i].append(bgImg)
             # update view
+            if(trainPosCol != -1 and trainPosRow != -1):
+                trainRect = pygame.Rect.move(topLeftRect, trainPosCol * imageWidth, trainPosRow * imageWidth)
 
-
+        
         drawGrid(view, topLeftRect)
         # draw train On top
-        # SCREEN.blit(trainImg, trainRect)
+        
+        SCREEN.blit(trainImg, trainRect)
 
         pygame.display.flip()
         pygame.display.update()
@@ -271,7 +260,7 @@ def drawGrid(view, topLeft):
     global globalGrid, SCREEN, imageWidth
     for i in range(0, globalGrid.row):
         for j in range(0, globalGrid.col):
-            SCREEN.blit(view[i][j], pygame.Rect.move(topLeft, j * imageWidth, i * imageWidth))
+            SCREEN.blit(view[i][j], pygame.Rect.move(topLeft, j * imageWidth, i * imageWidth)) 
 
 
 
@@ -302,6 +291,52 @@ class TurtleShell(cmd.Cmd):
         # now rotate the visuals as well
         isDirty = True
 
+    def do_entercell(self, arg):
+        'Create and place train at given row col with wagoncount many wagons. Cannot create on empty tiles'
+        'entdir is used to determine which side of the tile the train is. not visually visible as of now.'
+        'Usage: createtrain row col wagoncount entdir'
+        global globalGrid, trainPosRow, trainPosCol, isDirty, train
+        dirs = { "north" : 0,  "east" : 1, "south" : 2 , "west" : 3}
+
+        args = arg.split()
+        row = int(args[0])
+        col = int(args[1])
+        wagonCount = (int)(args[2])
+        entdir = (args[3])
+
+        if(globalGrid.grid[row][col].visuals == '_'):
+            print("Can not spawn on empty tile.")
+            return
+
+        # TODO: lock train mutex
+        train = globalGrid.spawnTrain(wagonCount, row, col)
+        train.enterCell(globalGrid.grid[row][col], dirs[entdir])
+        trainPosRow, trainPosCol = train.getEnginePos()
+        # unlock train mutex
+
+        isDirty = True
+        return
+
+    def do_advancetrain(self, arg):
+        'Advance the train using its current cell and dir, createtrain must be used first.'
+        'Train disappears if out of bounds or unconnected road'
+        'Usage: advancetrain'
+        global globalGrid, trainPosRow, trainPosCol, isDirty, train
+
+        # currCell = globalGrid.grid[train.enginePosRow][train.enginePosCol]
+        # nextCell = currCell.nextCell(dirs[entdir])
+        # needs mutex sync
+        canMove = train.advance()
+        if(canMove == False):
+            trainPosRow = -1
+            trainPosCol = -1
+            print("either unconnected or out of bounds cell. train will disappear")
+        else:
+            trainPosRow, trainPosCol = train.getEnginePos()
+        # needs mutex sync
+
+        isDirty = True
+        return
 
     def do_getnextcell(self,arg):
         'Usage: row col entdir'
@@ -317,6 +352,7 @@ class TurtleShell(cmd.Cmd):
             print("out of bounds")
         else:
             print(next.row, next.col, type(next))
+
     def do_changeswitchstate(self, arg):
         'Usage: row col '
         # it gets the next state default regular
@@ -348,11 +384,11 @@ class TurtleShell(cmd.Cmd):
         self.do_getnextcell("1 0 east")
 
         print("next cell when change state 1 time:")
-        self.do_changeswitchstate("1 0")
-        self.do_getnextcell("1 0 south")
-        print("next cell when rotate:")
-        self.do_rotate("1 1 0")
-        self.do_getnextcell("1 0 west")
+        # self.do_changeswitchstate("1 0")
+        # self.do_getnextcell("1 0 south")
+        # print("next cell when rotate:")
+        # self.do_rotate("1 1 0")
+        # self.do_getnextcell("1 0 west")
 
         
     def do_removeelm(self, arg):
@@ -464,33 +500,3 @@ def parse(arg):
     return tuple(map(int, arg.split()))
 if __name__ == '__main__':
     TurtleShell().cmdloop()
-
-
-
-
-    
-# first row rects
-# baseRect = regularImg.get_rect()
-# rect01 = pygame.Rect.move(baseRect, 200, 0)
-# rect02 = pygame.Rect.move(baseRect, 400, 0)
-# rect03 = pygame.Rect.move(baseRect, 600, 0)
-
-# #second row rects
-# rect10 = pygame.Rect.move(baseRect, 0, 200)
-# rect11 = pygame.Rect.move(baseRect, 200, 200)
-# rect12 = pygame.Rect.move(baseRect, 400, 200)
-# rect13 = pygame.Rect.move(baseRect, 600, 200)
-
-
-# #third row rects
-# rect20 = pygame.Rect.move(baseRect, 0, 400)
-# rect21 = pygame.Rect.move(baseRect, 200, 400)
-# rect22 = pygame.Rect.move(baseRect, 400, 400)
-# rect23 = pygame.Rect.move(baseRect, 600, 400)
-
-# #fourth row rects
-# rect30 = pygame.Rect.move(baseRect, 0, 600)
-# rect31 = pygame.Rect.move(baseRect, 200, 600)
-# rect32 = pygame.Rect.move(baseRect, 400, 600)
-# rect33 = pygame.Rect.move(baseRect, 600, 600)
-

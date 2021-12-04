@@ -96,7 +96,7 @@ class GameGrid():
         spawnCell = self.grid[row][col]
         t = Train(wagonCount, spawnCell, self)
         self.registerTrain(t)
-        self.drawTrains()
+        # self.drawTrains()
         return t
 
     def registerTrain(self, train):
@@ -107,18 +107,18 @@ class GameGrid():
         self.activeTrains.remove(train)
         return
 
-    def drawTrains(self):
-        for t in self.activeTrains:
-            self.view[t.enginePosRow][t.enginePosCol] = 't'
-        return
+    # def drawTrains(self):
+    #     for t in self.activeTrains:
+    #         self.view[t.enginePosRow][t.enginePosCol] = 't'
+    #     return
         
-    def updateTrainDisplay(self, train, prevRow, prevCol):
-        # use train's pos & path data to draw it in proper place, on top of the tiles.
+    # def updateTrainDisplay(self, train, prevRow, prevCol):
+    #     # use train's pos & path data to draw it in proper place, on top of the tiles.
 
-        # train exited this tile, redraw the tile visuals there
-        self.view[prevRow][prevCol] = self.grid[prevRow][prevCol].visuals
-        self.drawTrains()
-        return
+    #     # train exited this tile, redraw the tile visuals there
+    #     self.view[prevRow][prevCol] = self.grid[prevRow][prevCol].visuals
+    #     self.drawTrains()
+    #     return
 
     # Used to check for collisions/waiting by the cells.
     def hasTrain(self, row, col):
@@ -587,24 +587,32 @@ class Train():
         self.wagonCountPerCell = 2 # effectively, each 'car' takes 1/2 of a cell.
         self.gridRef = gridRef
         self.coveredCellCount = math.ceil(self.totalLength / self.wagonCountPerCell)
-
         # one of: "moving", "movingReverse", "stopped"
         self.status = "stopped" 
         self.enginePosRow, self.enginePosCol = cell.getPos()
         # self.updateDisplay() # Since grid creates the trains, this is unnecessary at the moment
         return
     
-    def enterCell(self, nextCell : CellElement):
+
+    def enterCell(self, nextCell : CellElement, entdir):
+        self.currDir = entdir
+        self.enginePosRow, self.enginePosCol = nextCell.getPos()
+        self.currCell = nextCell
+
+       
+    def advance(self):
+        nextCell = self.currCell.nextCell(self.currDir)
+        self.currDir = (self.currCell.exitDir + 2) % 4
 
         if(nextCell is None):
-            self.gridRef.trainDisappear(self)
+            # self.gridRef.trainDisappear(self)
+            return False
         else:
             # update pos
             self.currCell = nextCell
             self.enginePosRow, self.enginePosCol = nextCell.getPos()
-            self.updateDisplay()
-        return
-    
+        return True
+
     def getEnginePos(self):
         return self.enginePosRow, self.enginePosCol
 
@@ -624,10 +632,10 @@ class Train():
 
         return
 
-    def updateDisplay(self,prevRow, prevCol):
-        # notify grid/game manager class with new pos?
-        self.gridRef.updateTrainDisplay(self, prevRow, prevCol)
-        return
+    # def updateDisplay(self,prevRow, prevCol):
+    #     # notify grid/game manager class with new pos?
+    #     self.gridRef.updateTrainDisplay(self, prevRow, prevCol)
+    #     return
 
         
     def tempMove(self, rowDelta, colDelta):
