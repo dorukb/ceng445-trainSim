@@ -47,7 +47,7 @@ class GameGrid():
                 c = RegularRoad(True, self.grid)
                 c.setPosition(i,j)
                 self.grid[i].append(c)
-                self.view[i].append(c.visuals)
+                self.view[i].append('_')
 
 
     def addElement(self, cellElm, row, col):
@@ -138,7 +138,7 @@ class RegularRoad(CellElement):
         if(isStraight):
             self.dir1 = SOUTH
             self.dir2 = NORTH
-            self.visuals = '_'
+            self.visuals = '|'
         else: # default is a Right turn as in the pdf.
             # rotate this one time CW to get a left turn if needed
             self.visuals = 'R'
