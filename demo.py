@@ -291,10 +291,10 @@ class TurtleShell(cmd.Cmd):
         'Usage: rotate rotationCount(int) row col,  exp:  rotate 2 1 0   to rotate cell at row=1 col =0 180 degrees CW'
 
         global globalGrid,isDirty
-        tupleArgs = parse(arg)
-        rotCount = tupleArgs[0]
-        row = tupleArgs[1]
-        col = tupleArgs[2]
+        tupleArgs = arg.split()
+        rotCount = int(tupleArgs[0])
+        row = int(tupleArgs[1])
+        col = int(tupleArgs[2])
 
         cell = globalGrid.grid[row][col]
         cell.setOrientation(rotCount)
@@ -303,7 +303,58 @@ class TurtleShell(cmd.Cmd):
         isDirty = True
 
 
+    def do_getnextcell(self,arg):
+        'Usage: row col entdir'
+        dirs = { "north" : 0,  "east" : 1, "south" : 2 , "west" : 3}
+        tupleArgs = arg.split()
+        global globalGrid
+        row = int(tupleArgs[0])
+        col = int(tupleArgs[1])
+        entdir = tupleArgs[2]
+        
+        next = globalGrid.grid[row][col].nextCell(dirs[entdir])
+        if(next is None):
+            print("out of bounds")
+        else:
+            print(next.row, next.col, type(next))
+    def do_changeswitchstate(self, arg):
+        'Usage: row col '
+        # it gets the next state default regular
+        tupleArgs = arg.split()
+        global globalGrid
+        row = int(tupleArgs[0])
+        col = int(tupleArgs[1])
+        cell = globalGrid.grid[row][col]
+        if(isinstance(cell, lib.SwitchRoad)):
+            cell.switchState()
+            print(cell.activePiece)
+        else:
+            print("There is no switch at given position")
+        return
+    def do_test2(self, arg):
+        'it tests switch state'
+        self.do_creategrid("4 4")
+        self.do_addelm("0 0 regular")
+        self.do_addelm("0 1 regular")
+        self.do_addelm("0 2 regular")
+        self.do_addelm("2 0 regular")
+        self.do_addelm("1 0 switch3")
+        self.do_addelm("1 1 switch2")
+        self.do_addelm("1 2 switch1")
+        print("next cell when enter south:")
+        self.do_getnextcell("1 0 south")
 
+        print("next cell when enter east:")
+        self.do_getnextcell("1 0 east")
+
+        #print("next cell when change state 1 time:")
+        #self.do_changeswitchstate("1 0")
+        #self.do_getnextcell("1 0 south")
+        #print("next cell when rotate:")
+        #self.do_rotate("1 1 0")
+        #self.do_getnextcell("1 0 east")
+
+        
     def do_removeelm(self, arg):
         'Replace cell with background cell at given row col'
         'Exp usage: removeelm 1 2'
@@ -334,7 +385,7 @@ class TurtleShell(cmd.Cmd):
 
         newElm = None
         if(typeStr == "regular"):
-            print("regular is chosen.")
+           
             newElm = lib.RegularRoad(True, globalGrid)
         elif(typeStr == "switch1"):
             newElm = lib.SwitchRoad(1, globalGrid)
@@ -391,7 +442,7 @@ class TurtleShell(cmd.Cmd):
     def do_bye(self, arg):
         self.do_stopdisplay(arg)
 
-        'Stop recording, close the turtle window, and exit:  BYE'
+        'Stop recording, close the trainSim window, and exit:  BYE'
         print('Thank you for using Turtle')
         self.close()
         bye()
