@@ -223,6 +223,8 @@ class SwitchRoad(CellElement):
         self.switchType = typeofSwitch
         self.pieces = {'direct' : RegularRoad(True, gridRef)}
         self.activePiece = self.pieces['direct']
+        self.enter = SOUTH #default switch location is south for all type of switches
+        self.switchDelay = 2
         
         if(self.switchType == 1):
             # straight + right turn
@@ -246,6 +248,7 @@ class SwitchRoad(CellElement):
         return    
     def setCwRot(self): 
         # straightforward 90 degree rotation: S->W, W -> N and so on.
+        self.enter = (self.enter + 1) % 4
         if(self.switchType == 1):
             self.pieces['rightTurn'].setOrientation(1)
             self.pieces['direct'].setOrientation(1)
@@ -264,6 +267,7 @@ class SwitchRoad(CellElement):
     def setOrientation(self, rotationAmount):
         # rotate 90 degrees CW, directly change dir variables.
         self.rotationCount = (self.rotationCount + rotationAmount) % 4
+        
         for i in range(0, rotationAmount):
             self.setCwRot()
         return
@@ -271,6 +275,7 @@ class SwitchRoad(CellElement):
 
     def switchState(self):
         # only for switch roads. change which piece is active.
+
         if(self.switchType == 1):
             # if right make direct, if direct make right
             if(self.activePiece == self.pieces['direct']):
@@ -296,24 +301,32 @@ class SwitchRoad(CellElement):
 
     def getDuration(self, entdir):
         # It takes one second to pass this cell.
-        return self.activePiece.getDuration()
+        # add switch delay to default duration of the activepiece
+        
+        return self.activePiece.getDuration() + self.switchDelay
+        
 
     def getStop(self, entdir):
         # Train does NOT stop on this cell.
-        return self.activePiece.getStop()
+        return self.activePiece.getStop() 
         
     def nextCell(self,entdir):
         # if on the edge cells, and dir is outward, train will disappear
         # use activePiece to decide on exit direction if any
-        self.exitDir = None
-        if(self.activePiece.dir1 == entdir):
-            self.exitDir = self.activePiece.dir2
-        elif self.activePiece.dir2 == entdir:
-            self.exitDir = self.activePiece.dir1
+       
+        if(entdir == self.enter):
+            self.exitDir = None
+            if(self.activePiece.dir1 == entdir):
+                self.exitDir = self.activePiece.dir2
+            elif self.activePiece.dir2 == entdir:
+                self.exitDir = self.activePiece.dir1
+            else:
+                print("invalid entry direction for this cell.")
+                return None
         else:
-            print("invalid entry direction for this cell.")
-            return None
-
+            self.exitDir = self.enter
+            
+        
         if(self.exitDir == NORTH and self.myGrid.isOutOfBounds(self.row-1, self.col) == False):
         #     # row-1, col unchanged
             return(self.myGrid.grid[self.row-1][self.col] )
@@ -336,8 +349,12 @@ class SwitchRoad(CellElement):
         return self.row, self.col
         
     def canEnter(self, entdir):
-        return self.activePiece.canEnter(entdir)
+        canEnter = False
+        for i in self.pieces.keys:
+            res = self.pieces[i].canEnter(entdir)
+            canEnter = canEnter or res
 
+        return canEnter
 class LevelCrossing(CellElement):
     # if all are in the '+' shape as shown in pdf, then rotation does not matter for these tiles.
     def __init__(self, gridRef):

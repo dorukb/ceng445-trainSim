@@ -311,7 +311,7 @@ class TurtleShell(cmd.Cmd):
         row = int(tupleArgs[0])
         col = int(tupleArgs[1])
         entdir = tupleArgs[2]
-        
+        print(entdir)
         next = globalGrid.grid[row][col].nextCell(dirs[entdir])
         if(next is None):
             print("out of bounds")
@@ -347,12 +347,12 @@ class TurtleShell(cmd.Cmd):
         print("next cell when enter east:")
         self.do_getnextcell("1 0 east")
 
-        #print("next cell when change state 1 time:")
-        #self.do_changeswitchstate("1 0")
-        #self.do_getnextcell("1 0 south")
-        #print("next cell when rotate:")
-        #self.do_rotate("1 1 0")
-        #self.do_getnextcell("1 0 east")
+        print("next cell when change state 1 time:")
+        self.do_changeswitchstate("1 0")
+        self.do_getnextcell("1 0 south")
+        print("next cell when rotate:")
+        self.do_rotate("1 1 0")
+        self.do_getnextcell("1 0 west")
 
         
     def do_removeelm(self, arg):
@@ -448,6 +448,7 @@ class TurtleShell(cmd.Cmd):
         bye()
         return True
 
+    
     def precmd(self, line):
         line = line.lower()
         if self.file and 'playback' not in line:
