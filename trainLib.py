@@ -45,9 +45,10 @@ class GameGrid():
             self.view.append([])
             for j in range(0, col):
                 c = RegularRoad(True, self.grid)
+                c.visuals = '_'
                 c.setPosition(i,j)
                 self.grid[i].append(c)
-                self.view[i].append('_')
+                self.view[i].append(c.visuals)
 
 
     def addElement(self, cellElm, row, col):
@@ -58,6 +59,7 @@ class GameGrid():
 
     def removeElement(self, row, col):
         empty = RegularRoad(True, self.grid)
+        empty.visuals = '_'
         self.grid[row][col] = empty
         self.view[row][col] = '_' #display for BG
         return
@@ -129,7 +131,7 @@ class GameGrid():
 
 class RegularRoad(CellElement):
     def __init__(self, isStraight, gridRef):
-        self.visuals = 'R'
+        self.visuals = '_'
         self.rotationCount = 0
         self.myGrid = gridRef
         self.row = -1
