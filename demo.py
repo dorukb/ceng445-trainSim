@@ -297,6 +297,426 @@ class TrainSimCell(cmd.Cmd):
         self.do_display([])
         time.sleep(1)
         
+        tell = True
+
+    def do_testcase2(self, arg):
+        ''' 
+        Create a 4x4 grid and add each element type at some positions. 
+        '''
+        global tell
+        tell = False
+
+        print("Firrst, let's try add elements before createing a grid:")
+        time.sleep(2)
+        self.do_addelm("0 0 regular")
+        
+        time.sleep(2)
+        print("Ok, grid is created but what if we want to add an elemnet not defined?")
+        self.do_creategrid("4 4")
+        time.sleep(2)
+        self.do_addelm("0 0 people")
+
+        time.sleep(2)
+        print(" what if we want to add an elemnet a not valid cell?")
+        time.sleep(2)
+        self.do_addelm("7 7 regular")
+
+        time.sleep(2)
+        print("Now, it is time to add some right elements!")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("0 0 regular")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("0 1 rightturn")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("0 2 leftturn")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("0 3 switch1")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 0 switch2")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 1 switch3")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 2 levelcrossing")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 3 bridge")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("2 1 station")
+        time.sleep(1)
+        self.do_display([])
+
+        tell = True
+    
+    def do_testcase3(self,arg):
+        '''
+        Display remove functionality
+        '''
+        global tell
+        tell = False
+
+        print("First, let's try to remove elements before createing a grid:")
+        time.sleep(2)
+        self.do_removeelm("0 0")
+        
+        time.sleep(2)
+        self.do_creategrid("4 4")
+        print("Ok, grid is created.")
+        time.sleep(2)
+        print("Now, it is time to add some elements!")
+        time.sleep(2)
+        self.do_display([])
+        time.sleep(2)
+        self.do_addelm("0 0 switch3")
+        time.sleep(2)
+        self.do_display([])
+        time.sleep(2)
+        self.do_addelm("1 1 rightturn")
+        time.sleep(2)
+        self.do_display([])
+        time.sleep(2)
+        self.do_addelm("1 2 bridge")
+        time.sleep(2)
+        self.do_display([])
+        print("What happens if we wanna remove an empty tile?")
+        time.sleep(2)
+        self.do_removeelm("3 3")
+        time.sleep(2)
+        print("Let's delete an existing cell")
+        time.sleep(2)
+        self.do_removeelm("1 2")
+        time.sleep(2)
+        self.do_display([])
+
+        tell = True
+
+    def do_testcase4(self,arg):
+        '''
+        Display rotation functionality
+        '''
+        global tell
+        tell = False
+
+        print("First, let's try to rotate something before createing a grid:")
+        time.sleep(2)
+        self.do_rotate("1 2 3")
+        
+        time.sleep(2)
+        self.do_creategrid("4 4")
+        print("Ok, grid is created.")
+        time.sleep(2)
+        print("Now, it is time to add some elements!")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("0 0 switch3")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 1 rightturn")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 2 station")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 3 regular")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("2 2 switch1")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(2)
+        print("Look at the window! Something will be happen")
+        time.sleep(2)
+        self.do_rotate("1 1 2")
+        time.sleep(2)
+        self.do_display([])
+        self.do_rotate("2 0 0")
+        time.sleep(2)
+        self.do_display([])
+        self.do_rotate("1 1 3")
+        time.sleep(2)
+        self.do_display([])
+        self.do_rotate("2 1 1")
+        time.sleep(2)
+        self.do_display([])
+        self.do_rotate("3 2 2")
+        time.sleep(2)
+        self.do_display([])
+
+
+        tell = True
+
+    def do_testcase5(self, arg):
+        '''
+        Displays the getduration & getstop functionality
+        '''
+        global tell
+        tell = False
+
+        self.do_creategrid("4 4")
+        print("Ok, grid is created.")
+        time.sleep(1)
+        self.do_addelm("0 0 switch3")
+        self.do_addelm("1 1 rightturn")
+        self.do_addelm("2 0 station")
+        self.do_addelm("1 3 regular")
+        self.do_addelm("2 2 switch1")
+        self.do_display([])
+        time.sleep(1)
+        print("Let's check values for them")
+        time.sleep(1)
+        self.do_getduration("0 0 north")
+        time.sleep(1)
+        self.do_getstop("0 0 north")
+        time.sleep(1)
+        self.do_getduration("1 1 north")
+        time.sleep(1)
+        self.do_getstop("1 1 north")
+        time.sleep(1)
+        self.do_getduration("2 0 north")
+        time.sleep(1)
+        self.do_getstop("2 0 north")
+        time.sleep(1)
+        self.do_getduration("1 3 north")
+        time.sleep(1)
+        self.do_getstop("1 3 north")
+        time.sleep(1)
+        self.do_getduration("2 2 north")
+        time.sleep(1)
+        self.do_getstop("2 2 north")
+        time.sleep(1)
+
+        tell = True
+
+    def do_testcase6(self,arg):
+        '''
+        Display nextcell & switchstate functionality 
+        '''
+
+        self.do_creategrid("4 5")
+        self.do_addelm("0 0 regular")
+        self.do_addelm("0 1 regular")
+        self.do_addelm("0 2 rightturn")
+        self.do_addelm("2 0 regular")
+        self.do_addelm("1 0 switch3")
+        self.do_addelm("1 1 switch2")
+        self.do_addelm("1 2 switch1")
+        print("grid is created")
+        time.sleep(2)
+        self.do_display([])
+        time.sleep(2)
+        print("next cell when enter south to the cell 1 0 -> switch3 element \
+              (should be 0 0 regular):")
+        time.sleep(2)
+        self.do_getnextcell("1 0 south")
+        time.sleep(2)
+        print("next cell when enter east to the cell 1 0 -> switch3 elemnt \
+            (should be 2 0 regular):")
+        time.sleep(2)
+        self.do_getnextcell("1 0 east")
+        time.sleep(2)
+        print("active piece of switch3 when changeswitchstate 1 time \
+            (should be R ):")
+        time.sleep(2)
+        self.do_changeswitchstate("1 0")
+        time.sleep(2)
+        print("new nextcell of switch3 when enter south: \
+            (Shoud be 1 1 switch2)")
+        self.do_getnextcell("1 0 south")
+        time.sleep(2)
+        print("next cell of switch3 when rotate 1 time entering west\
+            (should be 2 0 regular):")
+        time.sleep(1)
+        self.do_rotate("1 1 0")
+        time.sleep(1)
+        self.do_getnextcell("1 0 west")
+        time.sleep(1)
+        tell = True
+       
+        return
+
+    def do_testcase7(self,arg):
+        '''
+        Create a train at different cells
+        '''
+        global tell
+        tell = False
+
+        self.do_creategrid("4 5")
+        self.do_addelm("0 0 regular")
+        self.do_addelm("0 1 regular")
+        self.do_addelm("0 2 rightturn")
+        self.do_addelm("2 0 regular")
+        self.do_addelm("1 0 switch3")
+        self.do_addelm("1 1 switch2")
+        self.do_addelm("1 2 switch1")
+        print("grid is created")
+        time.sleep(1)
+        self.do_display([])
+        print("it is time locate trains at some cells.")
+        time.sleep(1.5)
+        print("at cel 0 0:")
+        time.sleep(1.5)
+        self.do_entercell("0 0 2 north")
+        time.sleep(1.5)
+        self.do_display([])
+        time.sleep(1.5)
+        print("at cel 1 0:")
+        time.sleep(1.5)
+        self.do_entercell("1 0 2 north")
+        time.sleep(1.5)
+        self.do_display([])
+        time.sleep(1.5)
+        print("at cel 1 1:")
+        time.sleep(1.5)
+        self.do_entercell("1 1 2 north")
+        time.sleep(1.5)
+        self.do_display([])
+        time.sleep(1.5)
+        print("at cel 1 2:")
+        time.sleep(1.5)
+        self.do_entercell("1 2 2 north")
+        time.sleep(1.5)
+        self.do_display([])
+        time.sleep(1.5)
+        print("at cel 3 0 which is a bacground, empty tile:")
+        time.sleep(1.5)
+        self.do_entercell("3 0 2 north")
+        time.sleep(1.5)
+        self.do_display([])
+        time.sleep(1)
+        tell = True
+
+    def do_testcase8(self,arg):
+        '''
+        Display the advancetrain functionality, which moves the train
+        '''
+        global tell
+        tell = False
+
+        self.do_creategrid("4 4")
+        self.do_addelm("0 0 regular")
+        self.do_addelm("0 1 regular")
+        self.do_addelm("0 2 rightturn")
+        self.do_addelm("2 0 regular")
+        self.do_addelm("1 0 switch3")
+        self.do_addelm("1 1 switch2")
+        self.do_addelm("1 2 switch1")
+        print("grid is created")
+        time.sleep(1.5)
+        self.do_display([])
+        time.sleep(1.5)
+        print("it is time locate a trains at cell 0 0.")
+        time.sleep(1.5)
+        self.do_entercell("0 0 2 north")
+        time.sleep(1.5)
+        print("Let's move!")
+        time.sleep(1.5)
+        self.do_advancetrain([])
+        time.sleep(1.5)
+        self.do_display([])
+        time.sleep(1)
+        self.do_getstatus("1 0")
+        time.sleep(1.5)
+        self.do_advancetrain([])
+        time.sleep(1.5)
+        self.do_display([])
+        time.sleep(1)
+        self.do_getstatus("2 0")
+        time.sleep(1.5)
+        self.do_advancetrain([])
+        time.sleep(1.5)
+        self.do_display([])
+        time.sleep(1.5)
+
+
+        tell = True
+
+    def do_testcase9(self,args):
+        '''
+        it contains some commands to crate a visual move
+        '''
+        
+        global tell
+        tell = False
+        self.do_creategrid("3 3")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("0 0 switch2")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("0 1 regular")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("0 2 leftturn")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 0 bridge")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 1 levelcrossing")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("1 2 regular")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_addelm("2 0 station")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_rotate("1 0 1")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_rotate("1 1 0")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_entercell("2 0 2 south")
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_advancetrain([])
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_advancetrain([])
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
+        self.do_advancetrain([])
+        time.sleep(1)
+        self.do_display([])
+        time.sleep(1)
 
         tell = True
 
@@ -325,7 +745,7 @@ class TrainSimCell(cmd.Cmd):
                 return
             else:
                 duration = cell.getDuration(dirs[entdir])
-                print("duration for this cell: ", duration)
+                print("duration for cell: ", (row,col), "is:", duration)
         else:
             print("Please enter a valid direction.")
 
@@ -356,7 +776,7 @@ class TrainSimCell(cmd.Cmd):
                 return
             else:
                 stopTime = cell.getStop(dirs[entdir])
-                print("stop this cell for: ", stopTime, "secs")
+                print("stop at cell", (row,col), "for: ", stopTime, "secs")
                 return
         else:
             print("Please enter a valid direction.")
@@ -391,13 +811,6 @@ class TrainSimCell(cmd.Cmd):
                 print("The train is not in this cell. Please find it first!")
 
         return
-
-    def do_test1(self, arg):
-        self.do_creategrid("4 5")
-        self.do_addelm("1 1 regular")
-        self.do_addelm("0 2 switch2")
-        self.do_addelm("1 2 bridge")
-        self.do_removeelm("1 1")
 
     def do_rotate(self, arg):
         '''
@@ -525,33 +938,10 @@ class TrainSimCell(cmd.Cmd):
         
         if(isinstance(cell, lib.SwitchRoad)):
             cell.switchState()
-            print(cell.activePiece)
+            print(cell.activePiece.visuals)
         else:
             print("The switch you are looking for is not here, please try again.")
         return
-
-    def do_test2(self, arg):
-        'it tests switch state'
-        self.do_creategrid("4 4")
-        self.do_addelm("0 0 regular")
-        self.do_addelm("0 1 regular")
-        self.do_addelm("0 2 regular")
-        self.do_addelm("2 0 regular")
-        self.do_addelm("1 0 switch3")
-        self.do_addelm("1 1 switch2")
-        self.do_addelm("1 2 switch1")
-        print("next cell when enter south:")
-        self.do_getnextcell("1 0 south")
-
-        print("next cell when enter east:")
-        self.do_getnextcell("1 0 east")
-
-        print("next cell when change state 1 time:")
-        # self.do_changeswitchstate("1 0")
-        # self.do_getnextcell("1 0 south")
-        # print("next cell when rotate:")
-        # self.do_rotate("1 1 0")
-        # self.do_getnextcell("1 0 west")
 
     def do_removeelm(self, arg):
         '''
@@ -562,6 +952,12 @@ class TrainSimCell(cmd.Cmd):
         global globalGrid, isDirty
         if(not globalGrid):
             print("Please create a grid before hand.")
+            return
+        if(tupleArgs[0] < 0 or tupleArgs[0] >= globalGrid.row or tupleArgs[1] < 0 or tupleArgs[1] >= globalGrid.col):
+            print("Not existing cell!")
+            return
+        if(globalGrid.grid[tupleArgs[0]][tupleArgs[1]].visuals == '_'):
+            print("You cannot remove the background")
             return
         globalGrid.removeElement(tupleArgs[0], tupleArgs[1])
         isDirty = True
@@ -602,7 +998,9 @@ class TrainSimCell(cmd.Cmd):
         if(globalGrid is None):
             print("Please first create a grid.")
             return
-
+        if(row < 0 or row >= globalGrid.row or col < 0 or col >= globalGrid.col):
+            print("Please provide appropriate positions.")
+            return
         newElm = None
         if(typeStr == "regular"):
            

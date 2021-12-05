@@ -231,7 +231,7 @@ class SwitchRoad(CellElement):
         self.activePiece = self.pieces['direct']              # Keeps track of which part of the switch is active. 
                                                               #Changed by switchState(). Defualt straight piece is the active one.
         
-        self.enter = SOUTH                                    #default switch entrance location is south for all type of switches
+        self.enter = SOUTH                                #default switch entrance location is south for all type of switches
         
         self.switchDelay = 2                                  #used for make train slower in switches. 
         
@@ -313,11 +313,11 @@ class SwitchRoad(CellElement):
     def getDuration(self, entdir):
          # add switch delay to default duration of the active piece
         
-        return self.activePiece.getDuration() + self.switchDelay
+        return self.activePiece.getDuration(entdir) + self.switchDelay
         
     def getStop(self, entdir):
         # Train does NOT stop on this cell.
-        return self.activePiece.getStop() 
+        return self.activePiece.getStop(entdir) 
         
     def nextCell(self,entdir):
         # if on the edge cells, and dir is outward, train will disappear
@@ -329,7 +329,7 @@ class SwitchRoad(CellElement):
             self.exitDir = None
             if(self.activePiece.dir1 == entdir):
                 self.exitDir = self.activePiece.dir2
-            elif self.activePiece.dir2 == entdir:
+            elif(self.activePiece.dir2 == entdir):
                 self.exitDir = self.activePiece.dir1
             else:
                 print("invalid entry direction for this cell.")
