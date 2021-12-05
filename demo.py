@@ -6,7 +6,7 @@ import trainLib as lib
 import time
 
 import cmd, sys
-from turtle import *
+
 import threading as th
 
 
@@ -19,13 +19,14 @@ isDirty = False # needs sync across pygame and cmd threads.
 trainPosRow = -1 # needs sync
 trainPosCol = -1 # needs sync
 train = None
+tell = True
 
 BLACK = (0, 0, 0)
 WHITE = (200, 200, 200)
 
 imageWidth = 200
-WINDOW_HEIGHT = 800
-WINDOW_WIDTH = 800
+#WINDOW_HEIGHT = 800
+#WINDOW_WIDTH = 800
 
 def rot_center(image, angle):
     loc = image.get_rect().center  
@@ -38,9 +39,11 @@ def rot_center(image, angle):
 # x2S1 x1S3 Lc x2S2
 # st br x1S1 Lc
 # x3Ri x1S1 Lef Reg
-def pygameDisplay(threadName):
+def pygameDisplay(threadName, row, col):
     global SCREEN, CLOCK
     pygame.init()
+    WINDOW_HEIGHT = row*200
+    WINDOW_WIDTH = col*200
     SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     CLOCK = pygame.time.Clock()
     SCREEN.fill(BLACK)
@@ -264,10 +267,130 @@ def drawGrid(view, topLeft):
 
 
 
-class TurtleShell(cmd.Cmd):
-    intro = 'Welcome to the htc_dork shell. Type help or ? to list commands.\n'
-    prompt = '(htc_dork) '
+class TrainSimCell(cmd.Cmd):
+    intro = 'Welcome to the TrainSim shell. Type help or ? to list commands.\n'
+    prompt = '(trainSim) '
     file = None
+
+    #test cases
+    def do_testcase1(self,arg):
+        '''
+        It tries to create grids at different sizes, get error messages first, finally gives the right command and diplay grid.
+        '''
+        global tell 
+        tell = False
+        print("give grid size out of bounds:")
+        time.sleep(2)
+        self.do_creategrid("9 15")
+        time.sleep(2)
+        print("\n")
+        print("give grid size 0:")
+        time.sleep(2)
+        self.do_creategrid("0 0")
+        time.sleep(2)
+        print("\n")
+        print("give grid size appropirately:")
+        time.sleep(2)
+        print("check the opened window ->")
+        time.sleep(2)
+        self.do_creategrid("4 5")
+        self.do_display([])
+        time.sleep(1)
+        
+
+        tell = True
+
+    def do_getduration(self,arg):
+        #For now, it just returns the default value and the direction does not matter as long as it is one of the four main directions. 
+        '''
+        Usage: Enter coordinates (as row column order) and enter direction (lower-case). Exp: getduration 0 0 north
+        '''
+        global globalGrid
+        dirs = { "north" : 0,  "east" : 1, "south" : 2 , "west" : 3}
+        tupleArgs = arg.split()
+        row = int(tupleArgs[0])
+        col = int(tupleArgs[1])
+        entdir = tupleArgs[2]
+
+        if(not globalGrid):
+            print("Please create a grid before hand.")
+            return
+
+        cell = globalGrid.grid[row][col]
+
+        
+        if(entdir in dirs.keys()):
+            if(cell.visuals == '_'):
+                print("Opps, there is no cell element in that position. Please try again.")
+                return
+            else:
+                duration = cell.getDuration(dirs[entdir])
+                print("duration for this cell: ", duration)
+        else:
+            print("Please enter a valid direction.")
+
+    
+    def do_getstop(self,arg):
+        '''
+        Usage: Enter row col coordinates and entdir. Exp: getstop 0 0 north
+        '''
+        #For now, it just returns the default value and the direction does not matter as long as it is one of the four main directions. 
+        global globalGrid
+        dirs = { "north" : 0,  "east" : 1, "south" : 2 , "west" : 3}
+        tupleArgs = arg.split()
+        row = int(tupleArgs[0])
+        col = int(tupleArgs[1])
+        entdir = (tupleArgs[2])
+
+        if(not globalGrid):
+            print("Please create a grid before hand.")
+            return
+
+        cell = globalGrid.grid[row][col]
+
+        
+
+        if(entdir in dirs.keys()):
+            if(cell.visuals == '_'):
+                print("Opps, there is no cell element in that position.")
+                return
+            else:
+                stopTime = cell.getStop(dirs[entdir])
+                print("stop this cell for: ", stopTime, "secs")
+                return
+        else:
+            print("Please enter a valid direction.")
+            return
+    
+    def do_getstatus(self,args):
+        '''
+        Returns the status of the train if there is one in the given cell.
+        Usage: getstatus row col Exp: getstatus 0 0
+        '''
+        global globalGrid
+        global train
+        
+
+        tupleArgs = args.split()
+        row = int(tupleArgs[0])
+        col = int(tupleArgs[1])
+
+        if(not globalGrid):
+            print("Please create a grid before hand.")
+            return
+
+        cell = globalGrid.grid[row][col]
+        
+        if(cell.visuals == '_'):
+            print("There is no such a cell.")
+        else:
+            if(globalGrid.hasTrain(row,col)):
+                status = train.getStatus()
+                print(status)
+            else:
+                print("The train is not in this cell. Please find it first!")
+
+        return
 
     def do_test1(self, arg):
         self.do_creategrid("4 5")
@@ -277,13 +400,19 @@ class TurtleShell(cmd.Cmd):
         self.do_removeelm("1 1")
 
     def do_rotate(self, arg):
-        'Usage: rotate rotationCount(int) row col,  exp:  rotate 2 1 0   to rotate cell at row=1 col =0 180 degrees CW'
+        '''
+        Usage: rotate rotationCount(int) row col,  exp:  rotate 2 1 0   to rotate cell at row=1 col =0 180 degrees CW
+        '''
 
         global globalGrid,isDirty
         tupleArgs = arg.split()
         rotCount = int(tupleArgs[0])
         row = int(tupleArgs[1])
         col = int(tupleArgs[2])
+
+        if(not globalGrid):
+            print("Please create a grid before hand.")
+            return
 
         cell = globalGrid.grid[row][col]
         cell.setOrientation(rotCount)
@@ -292,9 +421,12 @@ class TurtleShell(cmd.Cmd):
         isDirty = True
 
     def do_entercell(self, arg):
-        'Create and place train at given row col with wagoncount many wagons. Cannot create on empty tiles'
-        'entdir is used to determine which side of the tile the train is. not visually visible as of now.'
-        'Usage: createtrain row col wagoncount entdir'
+        '''
+        Create and place train at given row col with wagoncount many wagons. Cannot create on empty tiles
+        entdir is used to determine which side of the tile the train is. Not visually visible as of now.'
+        Usage: createtrain row col wagoncount entdir. Exp: entercell 0 0 2 north
+        '''
+
         global globalGrid, trainPosRow, trainPosCol, isDirty, train
         dirs = { "north" : 0,  "east" : 1, "south" : 2 , "west" : 3}
 
@@ -304,10 +436,14 @@ class TurtleShell(cmd.Cmd):
         wagonCount = (int)(args[2])
         entdir = (args[3])
 
+        if(not globalGrid):
+            print("Please create a grid before hand.")
+            return
+
         if(globalGrid.grid[row][col].visuals == '_'):
             print("Can not spawn on empty tile.")
             return
-
+        
         # TODO: lock train mutex
         train = globalGrid.spawnTrain(wagonCount, row, col)
         train.enterCell(globalGrid.grid[row][col], dirs[entdir])
@@ -318,19 +454,26 @@ class TurtleShell(cmd.Cmd):
         return
 
     def do_advancetrain(self, arg):
-        'Advance the train using its current cell and dir, createtrain must be used first.'
-        'Train disappears if out of bounds or unconnected road'
-        'Usage: advancetrain'
+        '''
+        Advance the train using its current cell and dir, entercell must be used first.
+        Train disappears if out of bounds, empty tile or unconnected road'
+        Usage: advancetrain
+        '''
         global globalGrid, trainPosRow, trainPosCol, isDirty, train
+
 
         # currCell = globalGrid.grid[train.enginePosRow][train.enginePosCol]
         # nextCell = currCell.nextCell(dirs[entdir])
         # needs mutex sync
+
+        if(not globalGrid):
+            print("Please create a grid before hand.")
+            return
         canMove = train.advance()
         if(canMove == False):
             trainPosRow = -1
             trainPosCol = -1
-            print("either unconnected or out of bounds cell. train will disappear")
+            print("either unconnected, empty or out of bounds cell. Train will disappear")
         else:
             trainPosRow, trainPosCol = train.getEnginePos()
         # needs mutex sync
@@ -339,34 +482,54 @@ class TurtleShell(cmd.Cmd):
         return
 
     def do_getnextcell(self,arg):
-        'Usage: row col entdir'
+        '''
+        It prints the coordinates as row col and the type of the nextcell through entdir. 
+        Usage: row col coordinates of currentcell, entdir for nextcell. Exp: 0 0 north
+        '''
         dirs = { "north" : 0,  "east" : 1, "south" : 2 , "west" : 3}
         tupleArgs = arg.split()
         global globalGrid
         row = int(tupleArgs[0])
         col = int(tupleArgs[1])
         entdir = tupleArgs[2]
-        print(entdir)
+        if(not globalGrid):
+            print("Please create a grid before hand.")
+            return
+
         next = globalGrid.grid[row][col].nextCell(dirs[entdir])
+
+        
+
         if(next is None):
-            print("out of bounds")
+            print("You are trying to access out of the bounds. There is nothing but uncertainty.")
         else:
             print(next.row, next.col, type(next))
 
     def do_changeswitchstate(self, arg):
-        'Usage: row col '
-        # it gets the next state default regular
+        '''
+        It changes the state of the switch in order. Every call actives the next part according to CW. 
+        Usage: row col, Exp: 0 0 
+        '''
+        # it gets the next state, the default state is the regular road. It follows the CW order.
         tupleArgs = arg.split()
         global globalGrid
         row = int(tupleArgs[0])
         col = int(tupleArgs[1])
+
+        if(not globalGrid):
+            print("Please create a grid before hand.")
+            return
+
         cell = globalGrid.grid[row][col]
+
+        
         if(isinstance(cell, lib.SwitchRoad)):
             cell.switchState()
             print(cell.activePiece)
         else:
-            print("There is no switch at given position")
+            print("The switch you are looking for is not here, please try again.")
         return
+
     def do_test2(self, arg):
         'it tests switch state'
         self.do_creategrid("4 4")
@@ -390,25 +553,46 @@ class TurtleShell(cmd.Cmd):
         # self.do_rotate("1 1 0")
         # self.do_getnextcell("1 0 west")
 
-        
     def do_removeelm(self, arg):
-        'Replace cell with background cell at given row col'
-        'Exp usage: removeelm 1 2'
+        '''
+        Replace cell with background cell at given row col. Exp: removeelm 1 2
+        '''
+
         tupleArgs = parse(arg)
         global globalGrid, isDirty
+        if(not globalGrid):
+            print("Please create a grid before hand.")
+            return
         globalGrid.removeElement(tupleArgs[0], tupleArgs[1])
         isDirty = True
 
+        
     def do_creategrid(self, arg):
-        'Create grid row x col'
+        '''
+        Create grid row x col. Exp: creategrid 3 4 
+        **Note: Max displayable grid size is 5x9 due to image & screen size.
+        '''
+        #grid size can be 5 row*9 columns at most because of the screen limitations.
+
         tupleArgs = parse(arg)
         global globalGrid
+        if(tupleArgs[0] <=0 or tupleArgs[1] <= 0):
+            print("Sorry I can't print the nothingness :(")
+            return
+        if(tupleArgs[0] > 5 or tupleArgs[1] > 9):
+            print("Sorry, the municipilaty of screen does not allow us to built such a large structure :(")
+            return
         globalGrid = lib.GameGrid(tupleArgs[0], tupleArgs[1])
 
     def do_addelm(self, arg):        
-        '''Usage: addelm row col typeOfCell
+        '''
+        It adds the given element at the given position.
+        Usage: addelm row col typeOfCell
         typeOfCell(string): regular, switch1, switch2, switch3, bridge, levelcrossing, leftTurn, rightTurn, station
-        row,col (ints) are cell position. top left is row=0,col=0'''
+        row,col (ints) are cell position. top left is row=0,col=0
+        Exp: addelm 0 0 regular
+        '''
+
         splitArgs = arg.split()
         row = int(splitArgs[0])
         col = int(splitArgs[1])
@@ -441,7 +625,7 @@ class TurtleShell(cmd.Cmd):
         elif(typeStr == "station"):
             newElm = lib.Station(globalGrid)
         else:
-            print("typeOfCell(string) argument is invalid. abort.")
+            print("typeOfCell(string) argument is invalid. Abort.")
             return
         
         globalGrid.addElement(newElm, row, col)
@@ -449,19 +633,29 @@ class TurtleShell(cmd.Cmd):
         isDirty = True
 
     def do_display(self, arg):
+        '''
+        Display the grid. You can follow the cahnges as long as you don\'t quit. 
+        Please close the screen using stopdisplay command or use bye command the quit the shell.
+        '''
         global globalGrid
-        if(globalGrid != None):
-             globalGrid.display()
+        if(globalGrid == None):
+            print("Please cretae a grid first.")
+            return
+            
 
-        global isDisplaying, displayThread
+        global isDisplaying, displayThread,tell
         if(isDisplaying == False):
-            displayThread = th.Thread(target= pygameDisplay, args=("adim emre",))
+            displayThread = th.Thread(target= pygameDisplay, args=("adim emre", globalGrid.row, globalGrid.col))
             displayThread.start()
             isDisplaying = True
         else:
-            print("display thread is already active. change windows")
+            if(tell):
+                print("display thread is already active. change windows")
 
     def do_stopdisplay(self, arg):
+        '''
+        Stop the display and close the window. You can still use the commandline.
+        '''
         global stopDisplay, isDisplaying, displayThread
         if(isDisplaying == False): 
             return
@@ -476,12 +670,15 @@ class TurtleShell(cmd.Cmd):
         print("display thread stopped. done")
 
     def do_bye(self, arg):
+        '''
+        Close the trainSim window, and exit:  BYE
+        '''
         self.do_stopdisplay(arg)
 
-        'Stop recording, close the trainSim window, and exit:  BYE'
-        print('Thank you for using Turtle')
+        
+        print('Thank you for playing with trains! We hope you had fun :D')
         self.close()
-        bye()
+        #bye()
         return True
 
     
@@ -499,4 +696,4 @@ def parse(arg):
     'Convert a series of zero or more numbers to an argument tuple'
     return tuple(map(int, arg.split()))
 if __name__ == '__main__':
-    TurtleShell().cmdloop()
+    TrainSimCell().cmdloop()
