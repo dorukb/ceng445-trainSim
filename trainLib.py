@@ -44,6 +44,9 @@ class GameGrid():
         self.grid = []
         self.view = []
         
+        self.simTime = 0
+        self.timeStep = 1 
+        
         # Train refs to draw them on screen, on top of the tile view.
         self.activeTrains = []
         #default grid creation filled with background 
@@ -111,11 +114,18 @@ class GameGrid():
         return t
 
     def registerTrain(self, train):
+        print('train registered')
         self.activeTrains.append(train)
         return
 
     def trainDisappear(self,train):
-        self.activeTrains.remove(train)
+        print('train removed')
+        
+        try:
+            self.activeTrains.remove(train)
+        except:
+            print('train not found')
+
         return
 
     def hasTrain(self, row, col):  #it checks whether there is a train in the given cell or not 
@@ -548,7 +558,7 @@ class Station(CellElement):
         return 1 + self.getStop(entdir)
 
     def getStop(self, entdir):
-        return 10
+        return 3
 
     def nextCell(self,entdir):
         # if on the edge cells, and dir is outward, train will disappear
@@ -597,35 +607,23 @@ class Train():
         self.wagonCountPerCell = 2 # effectively, each 'car' takes 1/2 of a cell.
         self.gridRef = gridRef      # ref to GameGrid to be in communication.
         self.coveredCellCount = math.ceil(self.totalLength / self.wagonCountPerCell) 
+        self.trainSpeed = 0.5
         # one of: "moving", "movingReverse", "stopped"
-        self.status = "moving" 
+        self.status = "stopped" 
         self.enginePosRow, self.enginePosCol = cell.getPos()
         
+        self.destReached = False # reset each time state changes from moving
+        self.currMoveTime = 0 # reset each time state changes from 'moving'
+        self.currStopTime = 0 # reset each time state changes from 'stopped'
+        self.entDir = NORTH
+        self.exitDir = SOUTH # meaning move from north to south in current cell.
         return
     
     def enterCell(self, nextCell : CellElement, entdir):
         #it locates the train in a given cell position using entdir value.
-        self.currDir = entdir
+        self.entDir = entdir
         self.enginePosRow, self.enginePosCol = nextCell.getPos()
         self.currCell = nextCell
-
-    def advance(self):
-        #it moves the train to the available next cell
-        nextCell = self.currCell.nextCell(self.currDir)
-        self.currDir = (self.currCell.exitDir + 2) % 4 #when we go to nextcell, exitDir of previous cell become the entDir for the current cell. 
-                                                       #For example, when we move to cell at south, the entdir becomes the north, which is 2 direction away from the exitDir of previous cell.
-
-        if(nextCell is None):
-            # self.gridRef.trainDisappear(self), will be implemented
-            return False
-        elif(nextCell.visuals == '_'):
-            #nextcell is background
-            return False
-        else:
-            # update pos
-            self.currCell = nextCell
-            self.enginePosRow, self.enginePosCol = nextCell.getPos()
-        return True
 
     def getEnginePos(self):
         return self.enginePosRow, self.enginePosCol
@@ -636,8 +634,80 @@ class Train():
     def getGeometry(self):
         # Gets the geometry of the train path, engine and cars. 
         # Implemented in later phases where full train needs to be displayed on a curve during simulation
-
         return
 
+    def moveToDest(self, moveTime):
+        # calculate&set new engine pos after moving for moveTime
+        self.currMoveTime += moveTime
+
+        requiredTime = self.currCell.getDuration(self.entDir)
+        requiredTime /= self.trainSpeed # so if speed = 2, it takes half the time to pass this cell. reverse deltax calc ;p
+        
+        remainingMoveTime = requiredTime - self.currMoveTime
+        excessTime = -remainingMoveTime # use this time to wait for that duration.
+        
+        perct = self.currMoveTime / requiredTime
+        if(perct >= 1):
+            self.destReached = True
+
+        startPosX,startPosY = self.currCell.getPos() # returns (row,col)
+        endPosX, endPosY = self.destCell.getPos()
+
+        newPosX = self.lerp(startPosX, endPosX, perct)
+        newPosY = self.lerp(startPosY, endPosY, perct)
+
+        self.enginePosRow = newPosX
+        self.enginePosCol = newPosY
+        return excessTime
+
+    def lerp(self, start,end,t):
+        return ((1-t)*start) + (t * end)
+        
+    def changeState(self, newState):
+        self.currMoveTime = 0
+        self.currStopTime = 0            
+        self.destReached = False
+        self.status = newState
+        if(newState == 'moving'):
+
+            nextCell = self.currCell.nextCell(self.entDir)
+            if(nextCell != None):
+                self.destCell = nextCell
+                self.exitDir = self.currCell.exitDir
+                self.nextEnterDir = (self.currCell.exitDir + 2) % 4
+                print("entdir: ", self.entDir, "exitDir: ", self.exitDir, "nextEntDir; ", self.nextEnterDir)
+
+            else:
+                    # dead end or out of bounds. disappear for now.
+                self.changeState('stopped')
+                self.gridRef.trainDisappear(self)
+                
+        elif(newState == 'stopped'):
+            self.currCell = self.destCell
+            self.entDir = self.nextEnterDir
+            self.exitDir = None
+            self.nextEnterDir = None
+
+    def tick(self):
+
+        if(self.status == "moving"):
+            # keep moving towards the destination for timeStep seconds.
+            excessTime = self.moveToDest(self.gridRef.timeStep)  # calculates new pos after move
+            if(self.destReached):
+                self.changeState('stopped')
+                # if(excessTime > 0): # use this time to wait.
+                #     self.currStopTime += excessTime
+        elif(self.status == "stopped"):
+
+            self.currStopTime += self.gridRef.timeStep
+            remainingWaitTime = self.currCell.getStop(self.entDir) - self.currStopTime
+            moveTime = -remainingWaitTime # if remaining time > 0 then this one <0, so dont move.
+            print("waiting")
+            if(remainingWaitTime <= 0):
+                self.changeState('moving')
+                self.moveToDest(moveTime)
+                if(self.destReached): # as a result of moveToDest, this might change.
+                    self.changeState('stopped')
+        return 1
     
     

@@ -279,18 +279,8 @@ class TrainSimCell(cmd.Cmd):
         '''
         global tell 
         tell = False
-        print("give grid size out of bounds:")
-        time.sleep(2)
-        self.do_creategrid("9 15")
-        time.sleep(2)
-        print("\n")
-        print("give grid size 0:")
-        time.sleep(2)
-        self.do_creategrid("0 0")
-        time.sleep(2)
-        print("\n")
         print("give grid size appropirately:")
-        time.sleep(2)
+        time.sleep(1)
         print("check the opened window ->")
         time.sleep(2)
         self.do_creategrid("4 5")
@@ -306,62 +296,26 @@ class TrainSimCell(cmd.Cmd):
         global tell
         tell = False
 
-        print("Firrst, let's try add elements before createing a grid:")
-        time.sleep(2)
-        self.do_addelm("0 0 regular")
-        
-        time.sleep(2)
-        print("Ok, grid is created but what if we want to add an elemnet not defined?")
+        time.sleep(1)
         self.do_creategrid("4 4")
-        time.sleep(2)
-        self.do_addelm("0 0 people")
-
-        time.sleep(2)
-        print(" what if we want to add an elemnet a not valid cell?")
-        time.sleep(2)
-        self.do_addelm("7 7 regular")
-
-        time.sleep(2)
-        print("Now, it is time to add some right elements!")
-        time.sleep(1)
         self.do_display([])
-        time.sleep(1)
-        self.do_addelm("0 0 regular")
-        time.sleep(1)
-        self.do_display([])
-        time.sleep(1)
         self.do_addelm("0 1 rightturn")
-        time.sleep(1)
-        self.do_display([])
-        time.sleep(1)
         self.do_addelm("0 2 leftturn")
-        time.sleep(1)
-        self.do_display([])
-        time.sleep(1)
         self.do_addelm("0 3 switch1")
-        time.sleep(1)
-        self.do_display([])
-        time.sleep(1)
-        self.do_addelm("1 0 switch2")
-        time.sleep(1)
-        self.do_display([])
-        time.sleep(1)
+
+        # regular len 3 roads
+        self.do_addelm("0 0 regular")
+        self.do_addelm("1 0 regular")
+        self.do_addelm("2 0 regular")
+
         self.do_addelm("1 1 switch3")
-        time.sleep(1)
-        self.do_display([])
-        time.sleep(1)
         self.do_addelm("1 2 levelcrossing")
-        time.sleep(1)
-        self.do_display([])
-        time.sleep(1)
         self.do_addelm("1 3 bridge")
-        time.sleep(1)
-        self.do_display([])
-        time.sleep(1)
         self.do_addelm("2 1 station")
         time.sleep(1)
         self.do_display([])
 
+        
         tell = True
     
     def do_testcase3(self,arg):
@@ -866,31 +820,19 @@ class TrainSimCell(cmd.Cmd):
         isDirty = True
         return
 
-    def do_advancetrain(self, arg):
+    def do_tick(self, arg):
         '''
         Advance the train using its current cell and dir, entercell must be used first.
         Train disappears if out of bounds, empty tile or unconnected road'
-        Usage: advancetrain
+        Usage: tick
         '''
         global globalGrid, trainPosRow, trainPosCol, isDirty, train
-
-
-        # currCell = globalGrid.grid[train.enginePosRow][train.enginePosCol]
-        # nextCell = currCell.nextCell(dirs[entdir])
-        # needs mutex sync
-
         if(not globalGrid):
-            print("Please create a grid before hand.")
+            print("Please create a grid first.")
             return
-        canMove = train.advance()
-        if(canMove == False):
-            trainPosRow = -1
-            trainPosCol = -1
-            print("either unconnected, empty or out of bounds cell. Train will disappear")
-        else:
-            trainPosRow, trainPosCol = train.getEnginePos()
-        # needs mutex sync
 
+        train.tick()
+        trainPosRow, trainPosCol = train.getEnginePos()
         isDirty = True
         return
 
