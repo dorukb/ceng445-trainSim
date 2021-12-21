@@ -1,4 +1,5 @@
 import math
+import time
 
 #constants and globals
 background = '0'
@@ -46,7 +47,8 @@ class GameGrid():
         
         self.simTime = 0
         self.timeStep = 1 
-        
+        self.isPaused = False
+        self.isRunning = False
         # Train refs to draw them on screen, on top of the tile view.
         self.activeTrains = []
         #default grid creation filled with background 
@@ -92,12 +94,27 @@ class GameGrid():
         return
 
     def startSimulation(self): 
+        self.simTime = 0
+        self.isRunning = True
+
+        while self.isRunning:
+
+            if(not self.isPaused):
+                self.simTime += self.timeStep
+                for train in self.activeTrains:
+                    if(train):
+                        print("sim advanced one more tick")
+                        train.tick()
+
+            time.sleep(self.timeStep)
         return
 
     def setPauseResume(self):
+        self.isPaused = not self.isPaused
         return
 
     def stopSimulation(self):
+        self.isRunning = False
         return
     
     def spawnTrain(self, wagonCount, row, col): # Creates trains at given row and column
@@ -658,6 +675,7 @@ class Train():
 
         self.enginePosRow = newPosX
         self.enginePosCol = newPosY
+        print("train new pos:", self.enginePosRow, self.enginePosCol)
         return excessTime
 
     def lerp(self, start,end,t):

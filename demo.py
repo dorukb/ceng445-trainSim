@@ -13,9 +13,13 @@ import threading as th
 # globals
 globalGrid = None
 stopDisplay = False
+
 isDisplaying = False
-displayThread = None
+isSimulating = False
 isDirty = False # needs sync across pygame and cmd threads.
+
+displayThread = None
+simThread = None
 trainPosRow = -1 # needs sync
 trainPosCol = -1 # needs sync
 train = None
@@ -267,6 +271,9 @@ def drawGrid(view, topLeft):
 
 
 
+def startSim(grid):
+    return grid.startSimulation()
+
 class TrainSimCell(cmd.Cmd):
     intro = 'Welcome to the TrainSim shell. Type help or ? to list commands.\n'
     prompt = '(trainSim) '
@@ -312,10 +319,18 @@ class TrainSimCell(cmd.Cmd):
         self.do_addelm("1 2 levelcrossing")
         self.do_addelm("1 3 bridge")
         self.do_addelm("2 1 station")
+        self.do_entercell('2 1 1 south')
+        self.do_changeswitchstate('1 1')
         time.sleep(1)
         self.do_display([])
 
-        
+        print("Get your popcorns. simulation is about to start :)")
+        time.sleep(1)
+        self.do_startsim([])
+
+        global isDirty
+        isDirty = True
+
         tell = True
     
     def do_testcase3(self,arg):
@@ -820,6 +835,17 @@ class TrainSimCell(cmd.Cmd):
         isDirty = True
         return
 
+    def do_startsim(self, arg):
+        global globalGrid, isSimulating, simThread
+        if(isSimulating == False):
+            simThread = th.Thread(target= startSim, args=(globalGrid,))
+            simThread.start()
+            isSimulating = True
+
+    def do_stopsim(self,arg):
+        global globalGrid
+        globalGrid.stopSimulation()
+
     def do_tick(self, arg):
         '''
         Advance the train using its current cell and dir, entercell must be used first.
@@ -1008,6 +1034,10 @@ class TrainSimCell(cmd.Cmd):
         isDisplaying = False
         stopDisplay = False
         print("display thread stopped. done")
+    def do_stopsim(self, arg):
+        global simThread
+        if(simThread is not None):
+            simThread.join()
 
     def do_bye(self, arg):
         '''
