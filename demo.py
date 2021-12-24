@@ -43,6 +43,17 @@ def rot_center(image, angle):
 # x2S1 x1S3 Lc x2S2
 # st br x1S1 Lc
 # x3Ri x1S1 Lef Reg
+class Observer():
+    def __init__(self):
+        return
+    def notify(self, state):
+        print('observer received:', state)
+
+        for row in state:
+            print(row)
+            
+        return
+
 def pygameDisplay(threadName, row, col):
     global SCREEN, CLOCK
     pygame.init()
@@ -51,6 +62,7 @@ def pygameDisplay(threadName, row, col):
     SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     CLOCK = pygame.time.Clock()
     SCREEN.fill(BLACK)
+    
 
     # Prepare images to display later.
     regularImg = pygame.image.load("straightRoad.png")
@@ -65,6 +77,7 @@ def pygameDisplay(threadName, row, col):
     bridgeImg = pygame.image.load("bridge.png")
     trainImg = pygame.image.load("train.png")
 
+    trainShedImg = pygame.image.load("trainShed.png")
     leftImage = pygame.image.load("rightTurn.png")
     leftImage = rot_center(leftImage, -90)
 
@@ -72,6 +85,10 @@ def pygameDisplay(threadName, row, col):
 
     global globalGrid
     view = []
+
+    # sub as Observer
+    observer = Observer()
+    globalGrid.subscribe(observer)
 
     regularImgCache = {0 : regularImg}
     rightImgCache = {0 : rightImage}
@@ -83,6 +100,7 @@ def pygameDisplay(threadName, row, col):
     stationImgCache  = {0 : stationImg}
     bridgeImgCache = {0: bridgeImg}
     trainImgCache = {0: trainImg}
+    trainShedImgCache = {0: trainShedImg}
 
     for i in range(0, globalGrid.row):
         view.append([])
@@ -114,6 +132,8 @@ def pygameDisplay(threadName, row, col):
                 view[i].append(bridgeImg)
             elif(isinstance(elm,  lib.Station)):
                 view[i].append(stationImg)
+            elif(isinstance(elm, lib.TrainShed)):
+                view[i].append(trainShedImg)
             else: # unknown type of cell
                 # print("this is bg")
                 view[i].append(bgImg)
@@ -126,7 +146,11 @@ def pygameDisplay(threadName, row, col):
     while stopDisplay == False:
 
         if(isDirty == True):
-            isDirty = False
+            # isDirty = False
+            if(len(globalGrid.activeTrains) > 0):
+                trainPosRow = globalGrid.activeTrains[0].enginePosRow
+                trainPosCol = globalGrid.activeTrains[0].enginePosCol
+                
             for i in range(0, globalGrid.row):
                 for j in range(0, globalGrid.col):
                     elm = globalGrid.grid[i][j]
@@ -209,7 +233,7 @@ def pygameDisplay(threadName, row, col):
                             levelCrossingImgCache[elm.rotationCount] = rotatedImg  
                             view[i][j] = (rotatedImg)
                     elif(isinstance(elm,  lib.BridgeCrossing)):
-                        if(elm.rotationCount in levelCrossingImgCache):
+                        if(elm.rotationCount in bridgeImgCache):
                             # use that img
                             view[i][j] = bridgeImgCache[elm.rotationCount]
                         else:
@@ -219,7 +243,7 @@ def pygameDisplay(threadName, row, col):
                             bridgeImgCache[elm.rotationCount] = rotatedImg  
                             view[i][j] = (rotatedImg)
                     elif(isinstance(elm,  lib.Station)):
-                        if(elm.rotationCount in levelCrossingImgCache):
+                        if(elm.rotationCount in stationImgCache):
                             # use that img
                             view[i][j] = stationImgCache[elm.rotationCount]
                         else:
@@ -227,6 +251,16 @@ def pygameDisplay(threadName, row, col):
                             rotatedImg = pygame.image.load("station.png")
                             rotatedImg = rot_center(rotatedImg, -90 * elm.rotationCount)
                             stationImgCache[elm.rotationCount] = rotatedImg  
+                            view[i][j] = (rotatedImg)
+                    elif(isinstance(elm,  lib.TrainShed)):
+                        if(elm.rotationCount in trainShedImgCache):
+                            # use that img
+                            view[i][j] = trainShedImgCache[elm.rotationCount]
+                        else:
+                            #create that img and save it there
+                            rotatedImg = pygame.image.load("trainShed.png")
+                            rotatedImg = rot_center(rotatedImg, -90 * elm.rotationCount)
+                            trainShedImgCache[elm.rotationCount] = rotatedImg  
                             view[i][j] = (rotatedImg)
                     else: # unknown type of cell
                         view[i].append(bgImg)
@@ -236,9 +270,10 @@ def pygameDisplay(threadName, row, col):
 
         
         drawGrid(view, topLeftRect)
+
         # draw train On top
-        
-        SCREEN.blit(trainImg, trainRect)
+        if(trainPosCol != -1 and trainPosRow != -1):
+            SCREEN.blit(trainImg, trainRect)
 
         pygame.display.flip()
         pygame.display.update()
@@ -246,10 +281,14 @@ def pygameDisplay(threadName, row, col):
         time.sleep(0.02)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                globalGrid.unsubscribe(observer)
                 pygame.quit()
             elif(event.type == KEYDOWN):
                 if(event.key == K_q):
+                    globalGrid.unsubscribe(observer)
                     pygame.quit()
+    
+    globalGrid.unsubscribe(observer)
     pygame.quit()
 
 def updateView(view):
@@ -272,7 +311,10 @@ def drawGrid(view, topLeft):
 
 
 def startSim(grid):
-    return grid.startSimulation()
+    grid.startSimulation()
+
+    print("startsim func returned")
+    return
 
 class TrainSimCell(cmd.Cmd):
     intro = 'Welcome to the TrainSim shell. Type help or ? to list commands.\n'
@@ -296,7 +338,7 @@ class TrainSimCell(cmd.Cmd):
         
         tell = True
 
-    def do_testcase2(self, arg):
+    def do_simtest(self, arg):
         ''' 
         Create a 4x4 grid and add each element type at some positions. 
         '''
@@ -319,7 +361,8 @@ class TrainSimCell(cmd.Cmd):
         self.do_addelm("1 2 levelcrossing")
         self.do_addelm("1 3 bridge")
         self.do_addelm("2 1 station")
-        self.do_entercell('2 1 1 south')
+        self.do_addelm("3 1 trainshed") # the train spawner
+        # self.do_entercell('2 1 1 south')
         self.do_changeswitchstate('1 1')
         time.sleep(1)
         self.do_display([])
@@ -841,10 +884,20 @@ class TrainSimCell(cmd.Cmd):
             simThread = th.Thread(target= startSim, args=(globalGrid,))
             simThread.start()
             isSimulating = True
-
+            print("sim started again")
+        else:
+            print("already simulating")
     def do_stopsim(self,arg):
-        global globalGrid
+        global globalGrid, isSimulating, simThread
+        
         globalGrid.stopSimulation()
+        if(isSimulating == True):
+            print("waiting for simthread to finish")
+            simThread.join()
+            isSimulating = False
+            print("sim stopped, thread joined")
+        else:
+            print("not simulating on stopsim")
 
     def do_tick(self, arg):
         '''
@@ -990,6 +1043,8 @@ class TrainSimCell(cmd.Cmd):
             newElm = lib.RegularRoad(False,globalGrid)
         elif(typeStr == "station"):
             newElm = lib.Station(globalGrid)
+        elif(typeStr == "trainshed"):
+            newElm = lib.TrainShed(globalGrid)
         else:
             print("typeOfCell(string) argument is invalid. Abort.")
             return
@@ -1034,10 +1089,6 @@ class TrainSimCell(cmd.Cmd):
         isDisplaying = False
         stopDisplay = False
         print("display thread stopped. done")
-    def do_stopsim(self, arg):
-        global simThread
-        if(simThread is not None):
-            simThread.join()
 
     def do_bye(self, arg):
         '''

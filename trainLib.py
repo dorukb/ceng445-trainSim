@@ -46,11 +46,15 @@ class GameGrid():
         self.view = []
         
         self.simTime = 0
-        self.timeStep = 1 
+        self.timeStep = 0.25
         self.isPaused = False
         self.isRunning = False
         # Train refs to draw them on screen, on top of the tile view.
         self.activeTrains = []
+        self.tickables = [] # objects that need to do stuff during each simulation frame. for example TrainShed.
+
+        # observable fields
+        self.observers = []
         #default grid creation filled with background 
         for i in range(0, row):
             self.grid.append([])
@@ -65,12 +69,17 @@ class GameGrid():
                 #view grid is seperate than the actual grid. It keeps the visulas and used for display issues.
                 self.view[i].append(c.visuals)
 
+    # observer API
+    def subscribe(self, observer):
+        self.observers.append(observer)
+    
+    def unsubscribe(self, observer):
+        self.observers.remove(observer)
 
     def addElement(self, cellElm, row, col):
         cellElm.setPosition(row, col)
         self.grid[row][col] = cellElm
         self.view[row][col] = cellElm.visuals
-        return
 
     def removeElement(self, row, col):
         empty = RegularRoad(True, self.grid) # (bkz. GameGrid.__init___ (): line 51)
@@ -90,23 +99,41 @@ class GameGrid():
             return True
         return False
 
-    def updateView(self): # We provide this functionality by updtaing the view grid and display function where it needed.  
+    def updateView(self):
+        for observer in self.observers:
+            # this should be a network message sent to each client that currently uses this grid.
+            observer.notify(self.view)
         return
 
     def startSimulation(self): 
         self.simTime = 0
         self.isRunning = True
-
-        while self.isRunning:
+        print("start sim received by grid")
+        framecount = 0
+        while self.isRunning and framecount < 75:
 
             if(not self.isPaused):
                 self.simTime += self.timeStep
+
+                # currently only TrainShed.
+                updated = False
+                for tickable in self.tickables:
+                    if(tickable):
+                        tickable.tick()
+                        updated = True
                 for train in self.activeTrains:
                     if(train):
-                        print("sim advanced one more tick")
+                        # print("sim advanced one more tick")
                         train.tick()
+                        framecount +=1
+                        updated = True
+                if(updated):
+                    # notify the observers of the state change.
+                    self.updateView() 
 
             time.sleep(self.timeStep)
+        self.isRunning = False
+        print("sim stopped")
         return
 
     def setPauseResume(self):
@@ -114,6 +141,7 @@ class GameGrid():
         return
 
     def stopSimulation(self):
+        print('stopsimcall received in grid')
         self.isRunning = False
         return
     
@@ -126,8 +154,8 @@ class GameGrid():
         spawnCell = self.grid[row][col]
         t = Train(wagonCount, spawnCell, self)
         self.registerTrain(t) # register train for the grid. 
-                              #For the phase1 it is not that functional but when we have more trains in later phases it will be used as it supposed to.
-        
+        t.enterCell(spawnCell, spawnCell.dir1)
+
         return t
 
     def registerTrain(self, train):
@@ -571,9 +599,8 @@ class Station(CellElement):
     def switchState(self):
         return
 
-    def getDuration(self, entdir): #since it will be stopped in station, add the deault value to the stop value. 
-        return 1 + self.getStop(entdir)
-
+    def getDuration(self, entdir):
+        return 1
     def getStop(self, entdir):
         return 3
 
@@ -614,6 +641,98 @@ class Station(CellElement):
     def canEnter(self, entdir):
         #check the availability / connectivity of nextcell
         return (self.dir1 == entdir or self.dir2 == entdir)
+
+class TrainShed(CellElement):
+    # aka Train spawner
+    def __init__(self, gridRef): 
+        self.visuals = 'T' 
+        self.rotationCount = 0
+        self.myGrid = gridRef
+        self.row = -1
+        self.col = -1
+        #default dir values
+        self.dir1 = SOUTH
+        self.dir2 = NORTH
+        
+        # register this cell to simulation tick.
+        self.myGrid.tickables.append(self)
+
+        return
+
+    def setPosition(self, row, col):
+        self.row = row
+        self.col=  col
+        return  
+
+    def setCwRot(self):
+        self.dir1 = (self.dir1 + 1) % 4
+        self.dir2 = (self.dir2 + 1) % 4
+        return
+
+    def setOrientation(self, rotationAmount, incrRot : bool = True):
+        #like a straight road, increment rotationcount and rotate the directions rotationAmount times.
+        if(incrRot):
+            self.rotationCount = (self.rotationCount + rotationAmount) % 4
+        for i in range(0, rotationAmount):
+            self.setCwRot()
+        return
+
+    def switchState(self):
+        return
+
+    def getDuration(self, entdir):
+        return 1
+
+    def getStop(self, entdir):
+        return  0
+
+    def nextCell(self,entdir):
+        # if on the edge cells, and dir is outward, train will disappear
+        # calculate exit direction of the cell using dir value.
+
+        self.exitDir = None
+        if(self.dir1 == entdir):
+            self.exitDir = self.dir2
+        elif self.dir2 == entdir:
+            self.exitDir = self.dir1
+        else:
+            return None
+
+        #According to exitDir, if the nextCell is not out of bounds, return the nextCell
+        if(self.exitDir == NORTH and self.myGrid.isOutOfBounds(self.row-1, self.col) == False):
+        #     # row-1, col unchanged
+            return(self.myGrid.grid[self.row-1][self.col] )
+        elif(self.exitDir == SOUTH and self.myGrid.isOutOfBounds(self.row+1, self.col) == False):
+        #     # row+1, col unchanged
+            return(self.myGrid.grid[self.row+1][self.col])
+        elif(self.exitDir == WEST and self.myGrid.isOutOfBounds(self.row, self.col-1) == False):
+        #     #  col-1, row unchanged
+            return(self.myGrid.grid[self.row][self.col-1])
+        elif(self.exitDir == EAST and self.myGrid.isOutOfBounds(self.row, self.col+1) == False):
+        #     #  col+1, row unchanged
+            return(self.myGrid.grid[self.row][self.col+1])            
+        else: #no available cell is found
+            return None
+
+    def getPos(self):
+        return self.row, self.col
+
+    def getView(self):
+        return  self.visuals
+
+    def canEnter(self, entdir):
+        #check the availability / connectivity of nextcell
+        return (self.dir1 == entdir or self.dir2 == entdir)
+    
+    def tick(self):
+        if(len(self.myGrid.activeTrains) == 0):
+            # make grid spawn a new train at our position
+            wagonCount = 2
+            t = self.myGrid.spawnTrain(wagonCount, self.row, self.col)
+            return
+        else:
+            # wait till all trains disappear
+            return
 
 class Train():
     #GameGrid takes care of the created trains and their effcts in the grid view.
