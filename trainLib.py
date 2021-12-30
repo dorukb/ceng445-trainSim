@@ -46,7 +46,7 @@ class GameGrid():
         self.view = []
         
         self.simTime = 0
-        self.timeStep = 0.25
+        self.timeStep = 1
         self.isPaused = False
         self.isRunning = False
         # Train refs to draw them on screen, on top of the tile view.
@@ -122,6 +122,10 @@ class GameGrid():
         return
 
     def advanceSim(self):
+        # TODO remove isrunning=true, FOR DEBUG
+        self.isRunning = True
+        self.isPaused = False
+        print("advance sim in grid")
         if(self.isRunning):
             if(not self.isPaused):
                 for tickable in self.tickables:
@@ -726,6 +730,7 @@ class TrainShed(CellElement):
             # make grid spawn a new train at our position
             wagonCount = 2
             t = self.myGrid.spawnTrain(wagonCount, self.row, self.col)
+            print("she spawning train")
             return
         else:
             # wait till all trains disappear

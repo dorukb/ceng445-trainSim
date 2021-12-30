@@ -1,0 +1,9 @@
+login doruk 123
+create 4 5 grid1
+attach grid1
+add regular 0 0
+add regular 0 1
+add regular 1 0
+add regular 2 0
+add trainshed 3 0
+start
