@@ -94,6 +94,14 @@ class GameGrid():
                 print(self.view[i][j], end=' ')
             print('\n')
 
+    def getdisplayable(self):
+        res =""
+        for i in range(0,self.row):
+            for j in range(0, self.col):
+                res +=(self.view[i][j] + ' ')
+            res+='\n'
+        return res
+
     def isOutOfBounds(self, i, j): #check whether the given positions exists or not
         if(i >= self.row or j >= self.col or i < 0 or j < 0): 
             return True
@@ -102,38 +110,27 @@ class GameGrid():
     def updateView(self):
         for observer in self.observers:
             # this should be a network message sent to each client that currently uses this grid.
-            observer.notify(self.view)
+            # observer.notify(self.view)
+            observer.notify(self.getdisplayable())
+
         return
 
     def startSimulation(self): 
         self.simTime = 0
         self.isRunning = True
         print("start sim received by grid")
-        framecount = 0
-        while self.isRunning and framecount < 75:
+        return
 
+    def advanceSim(self):
+        if(self.isRunning):
             if(not self.isPaused):
-                self.simTime += self.timeStep
-
-                # currently only TrainShed.
-                updated = False
                 for tickable in self.tickables:
                     if(tickable):
                         tickable.tick()
-                        updated = True
                 for train in self.activeTrains:
                     if(train):
-                        # print("sim advanced one more tick")
                         train.tick()
-                        framecount +=1
-                        updated = True
-                if(updated):
-                    # notify the observers of the state change.
-                    self.updateView() 
-
-            time.sleep(self.timeStep)
-        self.isRunning = False
-        print("sim stopped")
+                self.updateView()
         return
 
     def setPauseResume(self):
