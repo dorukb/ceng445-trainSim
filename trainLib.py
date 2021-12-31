@@ -190,25 +190,27 @@ class RegularRoad(CellElement):
         self.myGrid = gridRef    #needs grid reference since we have to reach there to update grid.
         self.row = -1
         self.col = -1
+        self.isLeft = False
         self.isRegular = isStraight # if it is not straigt, it is a right turn. We exclude left turn here since it is the one time rotated version of right turn.
                                     # For the sake of simplicity, we define left turn by rotating the right turn.
         
         if(isStraight):
             self.dir1 = SOUTH
             self.dir2 = NORTH
-            self.visuals = '|'
+            self.visuals = u'\u2503'
         else:                       # default is a Right turn as in the pdf.
                                     # rotate this one time CW to get a left turn if needed
-            self.visuals = 'R'
+            self.visuals = u'\u250F'
             self.dir1 = SOUTH
             self.dir2 = EAST
         return
 
     def makeLeftTurn(self): # used for make a left turn from a right turn.
-        self.visuals = 'L'
+        self.visuals = u'\u2513'
         self.rotationCount = 0  # When we rotate to get left turn the count has been increased.
                                 # rotation count is assigned to 0 again since it should be a base case. 
         self.setOrientation( 1, False)
+        self.isLeft = True
         return self
 
     def setPosition(self, row, col):
@@ -225,7 +227,45 @@ class RegularRoad(CellElement):
         if(incrRot):
             self.rotationCount = (self.rotationCount + rotationAmount) % 4 # else assign the value in mod 4 to be able to detect new directions correctly.
         for i in range(0, rotationAmount):
-            self.setCwRot()                                            #does the real job 
+            self.setCwRot()  #does the real job 
+        if(self.isRegular):
+
+            if (self.rotationCount == 1 or self.rotationCount == 3 ) :
+                self.visuals =  u'\u2501'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            else:
+                self.visuals =  u'\u2503'
+                self.myGrid.view[self.row][self.col] = self.visuals
+
+        
+        elif(self.isRegular == 0 and self.isLeft == 0):  #right turn
+            if (self.rotationCount == 1) :
+                self.visuals =  u'\u2513'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 2) :
+                self.visuals =  u'\u251B'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 3) :
+                self.visuals =  u'\u2517'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            else:
+                self.visuals =  u'\u250F'
+                self.myGrid.view[self.row][self.col] = self.visuals
+
+        elif(self.isLeft == 1):  #left turn
+            if (self.rotationCount == 1) :
+                self.visuals =  u'\u251B'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 2) :
+                self.visuals =  u'\u2517'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 3) :
+                self.visuals =  u'\u250F'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            else:
+                self.visuals =  u'\u2513'
+                self.myGrid.view[self.row][self.col] = self.visuals
+                                                
         return
 
     def switchState(self):
@@ -276,7 +316,7 @@ class SwitchRoad(CellElement):
     #There are three types of switchRoad. Explained in lines:237, 241, 246
     def __init__(self, typeofSwitch, gridRef):
         # create 'pieces' of the switch using RegularRoad since switches are just the combinations of them.
-        self.visuals = 'S'
+        
         self.myGrid = gridRef
         self.rotationCount = 0
         self.switchType = typeofSwitch # int value 1,2,3
@@ -294,17 +334,21 @@ class SwitchRoad(CellElement):
         if(self.switchType == 1):
             # straight + right turn
             self.pieces['rightTurn'] = RegularRoad(False, gridRef)
+            self.visuals = u'\u2517'
         
         elif(self.switchType == 2):
             # straight + left turn
             self.pieces['leftTurn'] = RegularRoad(False, gridRef)   #As explained in RegularRoad class, it is cretaed as a right turn first.
             self.pieces['leftTurn'].setOrientation(1, False)        #Then rotate it one time and not update the rotationCount.
-       
+            self.visuals = 'S'
+
         elif(self.switchType == 3): 
             # straight + right turn + left turn
             self.pieces['rightTurn'] = RegularRoad(False, gridRef)
             self.pieces['leftTurn'] = RegularRoad(False, gridRef)
             self.pieces['leftTurn'].setOrientation(1, False)
+            self.visuals = 'S'
+
         return
 
     def setPosition(self, row, col):
