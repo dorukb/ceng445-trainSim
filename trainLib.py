@@ -137,10 +137,12 @@ class GameGrid():
                 self.updateView()
         return
 
-    def setPauseResume(self):
-        self.isPaused = not self.isPaused
+    def pauseSimulation(self):
+        self.isPaused = True
         return
-
+    def resumeSimulation(self):
+        self.isPaused = False
+        
     def stopSimulation(self):
         print('stopsimcall received in grid')
         self.isRunning = False
