@@ -223,11 +223,14 @@ class RegularRoad(CellElement):
         self.dir2 = (self.dir2 + 1) % 4
         return
 
-    def setOrientation(self, rotationAmount, incrRot : bool = True): #if incrRot is given False, it doesn't update the rotation amount. It is used for left turn object orientation. 
+    def setOrientation(self, rotationAmount, incrRot : bool = True, updateVisual = True): #if incrRot is given False, it doesn't update the rotation amount. It is used for left turn object orientation. 
         if(incrRot):
             self.rotationCount = (self.rotationCount + rotationAmount) % 4 # else assign the value in mod 4 to be able to detect new directions correctly.
         for i in range(0, rotationAmount):
             self.setCwRot()  #does the real job 
+
+        if(not updateVisual):
+            return
         if(self.isRegular):
 
             if (self.rotationCount == 1 or self.rotationCount == 3 ) :
@@ -316,7 +319,7 @@ class SwitchRoad(CellElement):
     #There are three types of switchRoad. Explained in lines:237, 241, 246
     def __init__(self, typeofSwitch, gridRef):
         # create 'pieces' of the switch using RegularRoad since switches are just the combinations of them.
-        
+        #self.visuals = [u'\u2522', u'\u252A', ]
         self.myGrid = gridRef
         self.rotationCount = 0
         self.switchType = typeofSwitch # int value 1,2,3
@@ -334,20 +337,20 @@ class SwitchRoad(CellElement):
         if(self.switchType == 1):
             # straight + right turn
             self.pieces['rightTurn'] = RegularRoad(False, gridRef)
-            self.visuals = u'\u2517'
+            self.visuals = u'\u2522'
         
         elif(self.switchType == 2):
             # straight + left turn
             self.pieces['leftTurn'] = RegularRoad(False, gridRef)   #As explained in RegularRoad class, it is cretaed as a right turn first.
-            self.pieces['leftTurn'].setOrientation(1, False)        #Then rotate it one time and not update the rotationCount.
-            self.visuals = 'S'
+            self.pieces['leftTurn'].setOrientation(1, False, False)        #Then rotate it one time and not update the rotationCount.
+            self.visuals = u'\u252A'
 
         elif(self.switchType == 3): 
             # straight + right turn + left turn
             self.pieces['rightTurn'] = RegularRoad(False, gridRef)
             self.pieces['leftTurn'] = RegularRoad(False, gridRef)
-            self.pieces['leftTurn'].setOrientation(1, False)
-            self.visuals = 'S'
+            self.pieces['leftTurn'].setOrientation(1, False, False)
+            self.visuals = u'\u2548'
 
         return
 
@@ -360,17 +363,17 @@ class SwitchRoad(CellElement):
         # straightforward 90 degree rotation: S->W, W -> N and so on.
         self.enter = (self.enter + 1) % 4
         if(self.switchType == 1):
-            self.pieces['rightTurn'].setOrientation(1)
-            self.pieces['direct'].setOrientation(1)
+            self.pieces['rightTurn'].setOrientation(1, True, False)
+            self.pieces['direct'].setOrientation(1, True, False)
         
         elif(self.switchType == 2):
-            self.pieces['leftTurn'].setOrientation(1)
-            self.pieces['direct'].setOrientation(1)
+            self.pieces['leftTurn'].setOrientation(1, True, False)
+            self.pieces['direct'].setOrientation(1, True, False)
         
         else: #switchType is 3
-            self.pieces['rightTurn'].setOrientation(1)
-            self.pieces['direct'].setOrientation(1)
-            self.pieces['leftTurn'].setOrientation(1)
+            self.pieces['rightTurn'].setOrientation(1, True, False)
+            self.pieces['direct'].setOrientation(1, True, False)
+            self.pieces['leftTurn'].setOrientation(1, True, False)
 
         return
 
@@ -381,6 +384,53 @@ class SwitchRoad(CellElement):
         
         for i in range(0, rotationAmount):
             self.setCwRot()
+        
+        if(self.switchType == 1):
+
+            if (self.rotationCount == 1) :
+                self.visuals =  u'\u2531'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 2) :
+                self.visuals =  u'\u2529'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 3) :
+                self.visuals =  u'\u253A'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            else:
+                self.visuals =  u'\u2522'
+                self.myGrid.view[self.row][self.col] = self.visuals
+
+        
+        if(self.switchType == 2):
+
+            if (self.rotationCount == 1) :
+                self.visuals =  u'\u2539'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 2) :
+                self.visuals =  u'\u2521'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 3) :
+                self.visuals =  u'\u2532'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            else:
+                self.visuals =  u'\u252A'
+                self.myGrid.view[self.row][self.col] = self.visuals
+
+        if(self.switchType == 3):
+
+            if (self.rotationCount == 1) :
+                self.visuals =  u'\u2549'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 2) :
+                self.visuals =  u'\u2547'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            elif (self.rotationCount == 3) :
+                self.visuals =  u'\u254A'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            else:
+                self.visuals =  u'\u2548'
+                self.myGrid.view[self.row][self.col] = self.visuals
+
         return
 
     def switchState(self):
@@ -462,15 +512,14 @@ class SwitchRoad(CellElement):
     def canEnter(self, entdir):
         #check the availability / connectivity of nextcell
         canEnter = False
-        res = self.activePiece.canEnter(entdir)
-        canEnter = canEnter or res
-
+        for key in self.pieces.keys:
+            canEnter = canEnter or self.pieces[key].canEnter(entdir)
         return canEnter
 
 class LevelCrossing(CellElement):
     # if all are in the '+' shape as shown in pdf, then rotation does not matter for these tiles.
     def __init__(self, gridRef):
-        self.visuals = '+'
+        self.visuals = u'\u256C'
         self.rotationCount = 0
         self.myGrid = gridRef
         self.row = -1
@@ -539,7 +588,7 @@ class LevelCrossing(CellElement):
 class BridgeCrossing(CellElement):
     # if all are in the '+' shape as shown in pdf, then rotation does not matter for these tiles on phase1.
     def __init__(self, gridRef):
-        self.visuals = '\u03A9' #visual is the omega sign
+        self.visuals = '\u256A' #visual is the omega sign
         self.rotationCount = 0
         self.myGrid = gridRef
         self.row = -1
@@ -569,6 +618,13 @@ class BridgeCrossing(CellElement):
             self.rotationCount = (self.rotationCount + rotationAmount) % 4  
         for i in range(0, rotationAmount):
             self.setCwRot()
+        
+        if (self.rotationCount == 1 or self.rotationCount == 3 ) :
+                self.visuals =  u'\u256B'
+                self.myGrid.view[self.row][self.col] = self.visuals
+        else:
+                self.visuals =  u'\u256A'
+                self.myGrid.view[self.row][self.col] = self.visuals
         return
 
     def getDuration(self, entdir):
@@ -613,7 +669,7 @@ class BridgeCrossing(CellElement):
 class Station(CellElement):
     #It is just like a straight regularRoad, but for simplcity we don't create it using RegularRoad class. 
     def __init__(self, gridRef): 
-        self.visuals = '\u0394' #the visual is the delta sign.
+        self.visuals = '\u255E' #the visual is the delta sign.
         self.rotationCount = 0
         self.myGrid = gridRef
         self.row = -1
@@ -639,6 +695,12 @@ class Station(CellElement):
             self.rotationCount = (self.rotationCount + rotationAmount) % 4
         for i in range(0, rotationAmount):
             self.setCwRot()
+        if (self.rotationCount == 1 or self.rotationCount == 3 ) :
+                self.visuals =  u'\u2561'
+                self.myGrid.view[self.row][self.col] = self.visuals
+        else:
+                self.visuals =  u'\u255E'
+                self.myGrid.view[self.row][self.col] = self.visuals
         return
 
     def switchState(self):
@@ -690,7 +752,7 @@ class Station(CellElement):
 class TrainShed(CellElement):
     # aka Train spawner
     def __init__(self, gridRef): 
-        self.visuals = 'T' 
+        self.visuals = 'o' 
         self.rotationCount = 0
         self.myGrid = gridRef
         self.row = -1
@@ -779,6 +841,83 @@ class TrainShed(CellElement):
         else:
             # wait till all trains disappear
             return
+
+class TurnBack(CellElement):
+    # A TurnBack element type is created it is like a dead end that reverses train direction peacefully, 
+    # like a U turn. The enter direction is also a exit direction.
+    def _init_(self, isStraight, gridRef):
+        self.visuals = u'\u2507'
+        self.rotationCount = 0
+        self.myGrid = gridRef    #needs grid reference since we have to reach there to update grid.
+        self.row = -1
+        self.col = -1
+
+        self.dir1 = SOUTH
+        self.dir2 = EAST
+        return
+
+    def setPosition(self, row, col):
+        self.row = row
+        self.col = col
+        return
+
+    def setCwRot(self):   #it assigns the new directions CW of the roads.
+        self.dir1 = (self.dir1 + 1) % 4
+        self.dir2 = (self.dir2 + 1) % 4
+        return
+
+    def setOrientation(self, rotationAmount, incrRot : bool = True): #if incrRot is given False, it doesn't update the rotation amount. It is used for left turn object orientation. 
+        if(incrRot):
+            self.rotationCount = (self.rotationCount + rotationAmount) % 4 # else assign the value in mod 4 to be able to detect new directions correctly.
+        for i in range(0, rotationAmount):
+            self.setCwRot()  #does the real job 
+        if(self.isRegular):
+
+            if (self.rotationCount == 1 or self.rotationCount == 3 ) :
+                self.visuals =  u'\u2505'
+                self.myGrid.view[self.row][self.col] = self.visuals
+            else:
+                self.visuals =  u'\u2507'
+                self.myGrid.view[self.row][self.col] = self.visuals
+        return
+    def switchState(self):
+        return
+    def getDuration(self, entdir): # default 1 for Regular Road
+        return 1
+    def getStop(self, entdir): # default 0 for Regular Road since not stop there
+        return 0 
+
+    def nextCell(self,entdir):
+        # U - Turn, exit from the direction you have just entered
+
+        if(entdir == self.dir1):
+            self.exitDir = self.dir1
+        else:
+            self.exitDir = self.dir2
+
+        #According to exitDir, if the nextCell is not out of bounds, return the nextCell
+        if(self.exitDir == NORTH and self.myGrid.isOutOfBounds(self.row-1, self.col) == False):
+        #     # row-1, col unchanged
+            return(self.myGrid.grid[self.row-1][self.col] )
+        elif(self.exitDir == SOUTH and self.myGrid.isOutOfBounds(self.row+1, self.col) == False):
+        #     # row+1, col unchanged
+            return(self.myGrid.grid[self.row+1][self.col])
+        elif(self.exitDir == WEST and self.myGrid.isOutOfBounds(self.row, self.col-1) == False):
+        #     #  col-1, row unchanged
+            return(self.myGrid.grid[self.row][self.col-1])
+        elif(self.exitDir == EAST and self.myGrid.isOutOfBounds(self.row, self.col+1) == False):
+        #     #  col+1, row unchanged
+            return(self.myGrid.grid[self.row][self.col+1])            
+        else: #  no available cell is found
+            return None
+
+    def getPos(self):
+        return self.row, self.col
+    def getView(self):
+        return  self.visuals
+    def canEnter(self, entdir): 
+         #check the availability / connectivity of nextcell
+        return (self.dir1 == entdir or self.dir2 == entdir)
 
 class Train():
     #GameGrid takes care of the created trains and their effcts in the grid view.
