@@ -148,6 +148,12 @@ class GameGrid():
         self.isRunning = False
         return
     
+    def getTrainPositions(self):
+        trainPositions = []
+        for t in self.activeTrains:
+            trainPositions.append(t.getEnginePos())
+        return trainPositions
+
     def spawnTrain(self, wagonCount, row, col): # Creates trains at given row and column
 
         if(self.isOutOfBounds(row,col)):
@@ -838,7 +844,7 @@ class TrainShed(CellElement):
             # make grid spawn a new train at our position
             wagonCount = 2
             t = self.myGrid.spawnTrain(wagonCount, self.row, self.col)
-            print("she spawning train")
+            print("shed spawning train")
             return
         else:
             # wait till all trains disappear
