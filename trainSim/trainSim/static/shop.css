@@ -1,0 +1,7 @@
+.grid {
+	height: 100px;
+	width: 200px;
+	display: inline-table;
+	border: solid rgb(226, 48, 48) 1px;
+	
+}
