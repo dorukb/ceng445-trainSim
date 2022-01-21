@@ -20,8 +20,12 @@ from trainSim import views
 
 
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', views.index),
+    re_path('createGrid/', views.createGrid),
+    re_path('create/', views.create),
+    re_path('edit/', views.edit),
 ]

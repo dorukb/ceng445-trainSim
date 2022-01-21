@@ -1,6 +1,6 @@
 from django import forms
 
-class Grid(forms.Form):
+class gridForm(forms.Form):
 	
 	row = forms.IntegerField(label = "Row", min_value = 0, required = True)
 	column = forms.IntegerField(label = "Column", min_value = 0, required = True)

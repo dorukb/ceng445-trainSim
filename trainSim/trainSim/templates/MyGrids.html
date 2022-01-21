@@ -1,7 +1,9 @@
 <html>
 	<head><title>My Grids</title>
-		<link rel="stylesheet" href="/static/shop.css"/>
+		<link rel="stylesheet" href="/static/shop.css">
 	</head>
+
+	{% csrf_token %}
 <body>
 	User: {{ user }}<br/>
 
@@ -14,14 +16,20 @@
 	<table>
 	<tr>
 	<th style="border-bottom: 1px solid black">Name</th>
-
+	<a href="/createGrid/{{uid}}">Create New Grid</a>
 	{% for entry in Grids %}
 	<tr><td>
-			{{ entry.name }}</td>
-		<td style="text-align: right">{{ entry.gridname }}</td>
+			
+		{{ entry.name }}</td>
+		{% csrf_token %}
+		<td style="text-align: left">{{ entry.gridname }}</td>
 		<!--td style="text-align: right">{{ entry.count  }}</td>
 		<td style="text-align: right">{{ entry.amount }}</td-->
-		<input type="submit" name="attach" value="Attach grid"/>
+		<input type="submit" name="attach" value="Attach"/>
+		<a href="/edit/{{ entry.gridname }}">Attach</a>
+		<input type="submit" name="edit" value="Edit"/>
+		
+	
 	</tr>
 	{% endfor %} 
 	<tr style="border: 0">
