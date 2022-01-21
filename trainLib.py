@@ -119,6 +119,7 @@ class GameGrid():
     def startSimulation(self): 
         self.simTime = 0
         self.isRunning = True
+        self.isPaused = False
         print("start sim received by grid")
         return
 
@@ -147,12 +148,13 @@ class GameGrid():
     def stopSimulation(self):
         print('stopsimcall received in grid')
         self.isRunning = False
+        self.isPaused = False
         return
     
     def getTrainPositions(self):
         trainPositions = []
         for t in self.activeTrains:
-            trainPositions.append(t.positions)
+            trainPositions.append(t.getGeometry())
         return trainPositions
 
     def spawnTrain(self, wagonCount, row, col): # Creates trains at given row and column
@@ -194,7 +196,7 @@ class RegularRoad(CellElement):
     # We class them as this since they both have one entrance and exit.
 
     def __init__(self, isStraight, gridRef):
-        self.visuals = '_'
+        self.visuals = '|'
         self.rotationCount = 0
         self.myGrid = gridRef    #needs grid reference since we have to reach there to update grid.
         self.row = -1
@@ -995,7 +997,8 @@ class Train():
     def getGeometry(self):
         # Gets the geometry of the train path, engine and cars. 
         # Implemented in later phases where full train needs to be displayed on a curve during simulation
-        return
+        # currently returns the (row,col) positions of the train engine and wagons.
+        return self.positions
 
     def moveToDest(self, moveTime):
         # calculate&set new engine pos after moving for moveTime
@@ -1045,18 +1048,29 @@ class Train():
         self.destReached = False
         self.status = newState
         if(newState == 'moving'):
+            
+            if(self.currCell is None or self.currCell.visuals == '_'):
+                # Outofbounds or background cell. disappear.
+                # self.destCell = None
+                self.status = 'removed'
+                self.gridRef.trainDisappear(self)
+                # self.changeState('stopped')
+                return
 
             nextCell = self.currCell.nextCell(self.entDir)
-            if(nextCell != None):
+            if(nextCell is not None): # in bounds but possible background cell.
                 self.destCell = nextCell
                 self.exitDir = self.currCell.exitDir
                 self.nextEnterDir = (self.currCell.exitDir + 2) % 4
                 print("entdir: ", self.entDir, "exitDir: ", self.exitDir, "nextEntDir; ", self.nextEnterDir)
-
+            
             else:
-                    # dead end or out of bounds. disappear for now.
-                self.changeState('stopped')
+                # dead end or out of bounds. disappear for now.
+                # self.changeState('stopped')
+                # self.destCell = None
+                self.status = 'removed'
                 self.gridRef.trainDisappear(self)
+                return
                 
         elif(newState == 'stopped'):
             self.currCell = self.destCell
@@ -1065,7 +1079,9 @@ class Train():
             self.nextEnterDir = None
 
     def tick(self):
-
+        if(self.status == 'removed'):
+             return
+             
         if(self.status == "moving"):
             # keep moving towards the destination for timeStep seconds.
             excessTime = self.moveToDest(self.gridRef.timeStep)  # calculates new pos after move
