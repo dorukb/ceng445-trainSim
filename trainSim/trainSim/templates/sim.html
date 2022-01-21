@@ -1,0 +1,58 @@
+<html>
+	<head><title>Simulation</title>
+	</head>
+
+	{% csrf_token %}
+<body>
+	User: {{ user }}
+
+    <div>
+        Simulation on {{gridname}}
+    </div>
+
+    <div>
+        <form method="POST" action="/commands/">
+
+        <a href="/">Back</a>
+        <div>
+            <span>
+                <input type="submit" name="step" value="Step"/>
+                <input type="hidden" name="gridname" value="{{ gridname }}"/>
+            </span>
+            <!-- <span>
+                <input type="submit" name="stop" value="Stop"/>
+            </span>
+            <span>
+                <input type="submit" name="pause" value="Pause"/>
+            </span>
+            <span>
+                <input type="submit" name="resume" value="Resume"/>
+            </span> -->
+        </div>
+    </div>
+
+	<table>
+	{% for viewrow in griddata.view %}
+	<tr>
+        {% for cell in viewrow %}
+        <td>
+			{{ cell }}
+	        {% csrf_token %}
+		</td>
+        {% endfor %}
+	</tr>
+	{% endfor %} 
+	</table>
+
+    <table>
+        {% for positions in trainPosition %}
+        <tr>
+            <td>
+                {{ positions }}
+                {% csrf_token %}
+            </td>
+        </tr>
+        {% endfor %} 
+     </table>
+</body>
+</html>

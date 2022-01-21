@@ -27,5 +27,17 @@ urlpatterns = [
     path('', views.index),
     re_path('createGrid/', views.createGrid),
     re_path('create/', views.create),
-    re_path('edit/', views.edit),
+    # re_path('attach/(?P<gridname>[aA-zZ]+)?', views.attach),
+    re_path('attach/(?P<gridname>[a-zA-Z0-9_]+)?', views.attach),
+    re_path('detach/(?P<gridname>[a-zA-Z0-9_]+)?', views.detach),
+    re_path('delete/(?P<gridname>[a-zA-Z0-9_]+)?', views.delete),
+
+    re_path('share/(?P<gridname>[a-zA-Z0-9_]+)?', views.share),
+    re_path('hatice/(?P<gridname>[a-zA-Z0-9_]+)?', views.hatice),
+
+    re_path('edit/(?P<gridname>[a-zA-Z0-9_]+)?', views.edit),
+    re_path('commands/', views.commands),
+    re_path('sim/(?P<gridname>[a-zA-Z0-9_]+)?', views.gosim),
+
+
 ]

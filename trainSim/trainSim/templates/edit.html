@@ -1,0 +1,59 @@
+<html>
+	<head><title>Edit Grid</title>
+	</head>
+
+	{% csrf_token %}
+<body>
+	User: {{ user }}
+
+    <div>
+        <form method="POST" action="/commands/">
+            {{ addform.as_table }}
+    </div>
+
+    <!-- <div>
+        <form id="form1" method="POST" action="/commands/">
+            {{removeform.as_table}}
+        <input type="submit" form="form1" name="removeelm" value="Remove element"/>        
+    </div> -->
+   
+	<table>
+        <div>
+            <span>
+                <input type="submit" name="addelm" value="Add element"/>
+            </span>
+            <span>
+                <input type="submit" name="removeelm" value="Remove element"/>
+            </span>
+            <span>
+                <input type="submit" name="rotate" value="Rotate element"/>
+            </span>
+            <span>
+                <input type="submit" name="chstate" value="Change switch state"/>
+            </span>
+        </div>
+    <input type="hidden" name="gridname" value="{{ gridname }}"/>
+
+	{% for viewrow in griddata.view %}
+	<tr>
+        {% for cell in viewrow %}
+        <td>
+			{{ cell }}
+	        {% csrf_token %}
+		</td>
+        {% endfor %}
+	</tr>
+	{% endfor %} 
+	</table>
+
+    <div>
+
+        <a href="/">Back</a>
+        <div>
+            <a href="/sim/{{ gridname }}"> Go to simulation
+        </div>
+    </div>
+
+	<!-- <a href="/accounts/logout">Logout</a><br/> -->
+</body>
+</html>

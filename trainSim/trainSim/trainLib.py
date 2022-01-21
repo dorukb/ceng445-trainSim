@@ -123,8 +123,11 @@ class GameGrid():
         print("start sim received by grid")
         return
 
+    def getCell(self,row,col):
+        return self.grid[row][col]
+
+
     def advanceSim(self):
-        # TODO remove isrunning=true, FOR DEBUG
         self.isRunning = True
         self.isPaused = False
         print("advance sim in grid")
@@ -133,7 +136,10 @@ class GameGrid():
                 for tickable in self.tickables:
                     if(tickable):
                         tickable.tick()
+                count = 0
                 for train in self.activeTrains:
+                    count += 1
+                    print("simulating train ", count)
                     if(train):
                         train.tick()
                 self.updateView()

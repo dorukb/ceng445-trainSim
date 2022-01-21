@@ -7,8 +7,8 @@ from django.contrib.auth.models import User
 
 class Grid(models.Model):
     gridname = models.CharField(max_length=20,primary_key= TRUE)
-    data = models.CharField(max_length=2048)
-    UserIDList = models.CharField(max_length=1024)
+    data = models.BinaryField(max_length=2048)
+    UserIDList = models.BinaryField(max_length=1024)
     author = models.CharField(max_length=20)
     def __str__(self):
 	    return self.gridname
