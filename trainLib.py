@@ -1,4 +1,5 @@
 import math
+from random import randrange
 import time
 
 #constants and globals
@@ -151,7 +152,7 @@ class GameGrid():
     def getTrainPositions(self):
         trainPositions = []
         for t in self.activeTrains:
-            trainPositions.append(t.getEnginePos())
+            trainPositions.append(t.positions)
         return trainPositions
 
     def spawnTrain(self, wagonCount, row, col): # Creates trains at given row and column
@@ -772,6 +773,10 @@ class TrainShed(CellElement):
         # register this cell to simulation tick.
         self.myGrid.tickables.append(self)
 
+        # keep track of the spawned trains by this TrainShed
+        # self.spawnedTrains = []
+        self.spawnedTrain = None
+
         return
 
     def setPosition(self, row, col):
@@ -840,15 +845,38 @@ class TrainShed(CellElement):
         return (self.dir1 == entdir or self.dir2 == entdir)
     
     def tick(self):
-        if(len(self.myGrid.activeTrains) == 0):
-            # make grid spawn a new train at our position
-            wagonCount = 2
-            t = self.myGrid.spawnTrain(wagonCount, self.row, self.col)
-            print("shed spawning train")
-            return
-        else:
-            # wait till all trains disappear
-            return
+        if(self.spawnedTrain == None):
+            wagonCount = randrange(1,4)
+            self.spawnedTrain = self.myGrid.spawnTrain(wagonCount, self.row, self.col)
+
+        if(self.spawnedTrain not in self.myGrid.activeTrains):
+            # then it has disappeared, respawn
+            wagonCount = randrange(1,4)
+            self.spawnedTrain = self.myGrid.spawnTrain(wagonCount, self.row, self.col)
+
+        # markedForSpawning = []
+        # for train in self.spawnedTrains:
+        #     if(train not in self.myGrid.activeTrains):
+        #         # then this train has disappeared. mark it for respawn
+        #         markedForSpawning.append(train)
+
+        # for t in markedForSpawning:
+        #     # then this train has disappeared. respawn it
+        #     self.spawnedTrains.remove(t)
+
+        #     wagonCount = randrange(1,4)
+        #     train = self.myGrid.spawnTrain(wagonCount, self.row, self.col)
+        #     self.spawnedTrains.append(train)
+
+        # if(len(self.myGrid.activeTrains) == 0):
+        #     # make grid spawn a new train at our position
+        #     wagonCount = 2
+        #     t = self.myGrid.spawnTrain(wagonCount, self.row, self.col)
+        #     print("shed spawning train")
+        #     return
+        # else:
+        #     # wait till all trains disappear
+        #     return
 
 class TurnBack(CellElement):
     # A TurnBack element type is created it is like a dead end that reverses train direction peacefully, 
@@ -941,6 +969,10 @@ class Train():
         self.status = "stopped" 
         self.enginePosRow, self.enginePosCol = cell.getPos()
         
+        self.positions = [] # holds last totalLength many positions, used to draw Engine and all wagons.
+        for i in range(0, self.totalLength):
+            self.positions.append(cell.getPos())
+
         self.destReached = False # reset each time state changes from moving
         self.currMoveTime = 0 # reset each time state changes from 'moving'
         self.currStopTime = 0 # reset each time state changes from 'stopped'
@@ -988,6 +1020,20 @@ class Train():
         self.enginePosRow = newPosX
         self.enginePosCol = newPosY
         print("train new pos:", self.enginePosRow, self.enginePosCol)
+
+        lastIndex = self.totalLength-1
+        for i in range(0, lastIndex):
+            # shift positions one position right
+            self.positions[lastIndex-i] = self.positions[lastIndex-i-1]
+        self.positions[0] = (newPosX, newPosY)
+
+        
+        for i in range(self.totalLength):
+            if(i == 0):
+                print("Engine pos:", self.positions[i])
+            else:
+                print("Wagon ",i+1, " pos: ", self.positions[i])
+
         return excessTime
 
     def lerp(self, start,end,t):
