@@ -67,10 +67,17 @@ def simulator():
                     for observer in itsobservers:
                         #print("notify observer?")
                         map = grid.getdisplayable() +' \n'
-                        trainPositions = grid.getTrainPositions() # return list of tuples[(x,y), (x2,y2)]
+                        trainPositions = grid.getTrainPositions() # return list of list of tuples[(x,y), (x2,y2)]
                         trainInfo = ""
                         for pos in trainPositions:
-                            trainInfo +=  "row: " + str(pos[0]) + " col: " + str(pos[1]) + '\n'
+                            i = 0
+                            for wagonPos in pos:
+                                if(i == 0):
+                                    trainInfo +=  "Engine pos row: " + str(wagonPos[0]) + " col: " + str(wagonPos[1]) + '\n'
+                                else:
+                                    trainInfo +=  "wagon " + str(i) + " pos row: " + str(wagonPos[0]) + " col: " + str(wagonPos[1]) + '\n'
+                                i+=1
+                                
                         msg = map + trainInfo
                         observer.simNotification(msg)
 
@@ -508,7 +515,7 @@ def worker(sock : socket):
                 cursor.execute(query,(attachedGridName,))
                 res = cursor.fetchone()
                 grid = pickle.loads(res[0])
-                grid.resumSimulation()
+                grid.resumeSimulation()
 
                 pickled = pickle.dumps(grid)
 
